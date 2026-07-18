@@ -74,6 +74,7 @@ class share_upload_task extends \core\task\adhoc_task {
                 'tags' => $share->tags ?? '',
                 'licenseshortname' => $share->licenseshortname ?? '',
                 'activitytype' => $share->activitytype ?? '',
+                'resourceid' => $this->find_existing_resource_id($share),
             ], $link->token);
 
             $DB->update_record('local_oerclient_shares', (object) [
@@ -93,6 +94,35 @@ class share_upload_task extends \core\task\adhoc_task {
                 'timemodified' => time(),
             ]);
         }
+    }
+
+    /**
+     * Finds a prior successful share of the same course/activity by the same
+     * user, so re-sharing (e.g. after updating the course) adds a new
+     * version to the existing Exchange catalogue entry instead of creating
+     * a duplicate one — local_oerexchange_publish_resource has always
+     * supported this via its 'resourceid' param, and resource_manager::
+     * publish() already versions when given one, but this call site never
+     * passed it (found live, 2026-07-19, while re-sharing a course for the
+     * walkthrough docs produced a second catalogue entry instead of a new
+     * version of the first).
+     *
+     * @param \stdClass $share
+     * @return int existing resource id to add a version to, or 0 for new
+     */
+    protected function find_existing_resource_id(\stdClass $share): int {
+        global $DB;
+
+        $conditions = [
+            'userid' => $share->userid,
+            'courseid' => $share->courseid,
+            'cmid' => $share->cmid ?: null,
+            'status' => 'published',
+        ];
+        $previous = $DB->get_records('local_oerclient_shares', $conditions, 'timemodified DESC', 'exchangeresourceid', 0, 1);
+        $previous = reset($previous);
+
+        return $previous ? (int) $previous->exchangeresourceid : 0;
     }
 
     /**
