@@ -108,7 +108,24 @@ class provider implements
 
     #[\Override]
     public static function delete_data_for_all_users_in_context(\context $context): void {
-        return;
+        global $DB;
+
+        // Unlike local_oerexchange's catalogue (where one row can carry
+        // other users' reviews/shared content, so a blanket wipe would
+        // destroy data that isn't the requesting context's own), every row
+        // in all three of this plugin's tables already belongs to exactly
+        // one user (get_contexts_for_userid()/get_metadata() only ever
+        // place data at the system context) — so honouring a bulk
+        // "delete all users' data in this context" request here is safe and
+        // required for privacy-tool completeness (MDL Shield audit finding,
+        // 2026-07-18 round 3/4: this was previously an unconditional no-op).
+        if (!$context instanceof \context_system) {
+            return;
+        }
+
+        $DB->delete_records('local_oerclient_link');
+        $DB->delete_records('local_oerclient_shares');
+        $DB->delete_records('local_oerclient_imports');
     }
 
     #[\Override]

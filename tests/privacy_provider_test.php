@@ -89,4 +89,53 @@ final class privacy_provider_test extends \core_privacy\tests\provider_testcase 
         $this->assertEquals(0, $DB->count_records('local_oerclient_shares', ['userid' => $user->id]));
         $this->assertEquals(0, $DB->count_records('local_oerclient_imports', ['userid' => $user->id]));
     }
+
+    /**
+     * Every row in this plugin's tables already belongs to exactly one user
+     * (unlike local_oerexchange's shared catalogue, where one row can carry
+     * other users' data too) — so, unlike that sibling plugin, a bulk
+     * "delete all users' data in this context" request should actually wipe
+     * the tables rather than being a no-op (MDL Shield audit finding,
+     * 2026-07-18 round 3/4: this was previously an unconditional no-op
+     * despite all this plugin's data living at the system context).
+     */
+    public function test_delete_data_for_all_users_in_context_wipes_system_context_data(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $user1 = $this->getDataGenerator()->create_user();
+        $user2 = $this->getDataGenerator()->create_user();
+
+        $DB->insert_record('local_oerclient_link', (object) [
+            'userid' => $user1->id, 'exchangeuserid' => 5, 'token' => 'abc', 'timecreated' => time(),
+        ]);
+        $DB->insert_record('local_oerclient_link', (object) [
+            'userid' => $user2->id, 'exchangeuserid' => 6, 'token' => 'def', 'timecreated' => time(),
+        ]);
+
+        provider::delete_data_for_all_users_in_context(\context_system::instance());
+
+        $this->assertEquals(0, $DB->count_records('local_oerclient_link'));
+    }
+
+    /**
+     * A context other than the system context (e.g. a course context, which
+     * this plugin never places data at) must be a safe no-op, not an error
+     * or an accidental blanket wipe.
+     */
+    public function test_delete_data_for_all_users_in_context_ignores_non_system_context(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $user = $this->getDataGenerator()->create_user();
+        $course = $this->getDataGenerator()->create_course();
+
+        $DB->insert_record('local_oerclient_link', (object) [
+            'userid' => $user->id, 'exchangeuserid' => 5, 'token' => 'abc', 'timecreated' => time(),
+        ]);
+
+        provider::delete_data_for_all_users_in_context(\context_course::instance($course->id));
+
+        $this->assertEquals(1, $DB->count_records('local_oerclient_link'));
+    }
 }
