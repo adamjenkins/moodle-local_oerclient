@@ -28,8 +28,11 @@ require(__DIR__ . '/../../config.php');
 require_login();
 
 $query = optional_param('q', '', PARAM_TEXT);
+$type = optional_param('type', '', PARAM_ALPHA);
+$page = optional_param('page', 0, PARAM_INT);
+$perpage = 20;
 
-$PAGE->set_url('/local/oerclient/browse.php', ['q' => $query]);
+$PAGE->set_url('/local/oerclient/browse.php', ['q' => $query, 'type' => $type, 'page' => $page]);
 $PAGE->set_context(context_system::instance());
 $PAGE->set_pagelayout('standard');
 $PAGE->set_title(get_string('browseexchange', 'local_oerclient'));
@@ -48,12 +51,22 @@ if (empty($exchangeurl) || empty($sitetoken)) {
 
 echo html_writer::start_tag('form', ['method' => 'get', 'action' => new moodle_url('/local/oerclient/browse.php')]);
 echo html_writer::empty_tag('input', ['type' => 'text', 'name' => 'q', 'value' => $query, 'class' => 'form-control d-inline w-auto']);
+echo html_writer::tag('label', get_string('filterbytype', 'local_oerclient'), ['for' => 'oerclient-filter-type', 'class' => 'ms-2 me-1']);
+echo html_writer::select(
+    ['' => '', 'course' => get_string('typecourse', 'local_oerclient'), 'activity' => get_string('typeactivity', 'local_oerclient')],
+    'type',
+    $type,
+    false,
+    ['id' => 'oerclient-filter-type', 'class' => 'form-select d-inline w-auto']
+);
 echo html_writer::empty_tag('input', ['type' => 'submit', 'value' => get_string('searchbutton', 'local_oerclient'), 'class' => 'btn btn-primary ms-2']);
 echo html_writer::end_tag('form');
 
 try {
     $client = new exchange_client($exchangeurl);
-    $result = $client->call('local_oerexchange_search', ['query' => $query], $sitetoken);
+    $result = $client->call('local_oerexchange_search', [
+        'query' => $query, 'type' => $type, 'page' => $page, 'perpage' => $perpage,
+    ], $sitetoken);
 } catch (\Throwable $e) {
     echo $OUTPUT->notification(s($e->getMessage()), 'error');
     echo $OUTPUT->footer();
@@ -77,6 +90,9 @@ if (empty($result['results'])) {
         echo html_writer::end_tag('div');
     }
     echo html_writer::end_tag('div');
+
+    $baseurl = new moodle_url('/local/oerclient/browse.php', ['q' => $query, 'type' => $type]);
+    echo $OUTPUT->paging_bar($result['total'], $page, $perpage, $baseurl);
 }
 
 echo $OUTPUT->footer();
