@@ -16,8 +16,6 @@
 
 namespace local_oerclient\local;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests for link_state — the account-linking CSRF/state-token guard added
  * for an MDL Shield audit finding (2026-07-18): connect_callback.php

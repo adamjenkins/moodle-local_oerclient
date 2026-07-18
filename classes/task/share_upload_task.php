@@ -18,8 +18,6 @@ namespace local_oerclient\task;
 
 use local_oerclient\local\exchange_client;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Adhoc task: build a sanitized (users=false) backup of a share's
  * course/activity, upload it to the Exchange, and publish it. See
@@ -139,6 +137,8 @@ class share_upload_task extends \core\task\adhoc_task {
     }
 
     /**
+     * Builds a sanitized (no user data) backup of a share's course or activity.
+     *
      * @param \stdClass $share
      * @return string temp path to the produced .mbz
      */
@@ -165,14 +165,14 @@ class share_upload_task extends \core\task\adhoc_task {
             );
         }
 
-        // backup_controller's constructor already runs check_security(),
-        // which locks 'users' to false (status LOCKED_BY_PERMISSION) for
-        // any executing user who lacks moodle/backup:userinfo - ordinary
-        // editingteachers, not just admins/managers. base_setting::set_value()
-        // throws on ANY call once a setting is locked, even to its current
-        // value, so unconditionally forcing false here broke sharing for
-        // every teacher without that capability (found in the 2026-07-19
-        // MDL Shield audit pass). Only force it when it's still ours to set.
+        // The backup_controller constructor already runs check_security,
+        // which locks the users setting to false for any executing user
+        // who lacks the backup:userinfo capability - ordinary teachers,
+        // not just admins/managers. A locked setting throws on any further
+        // set_value call, even to its current value, so unconditionally
+        // forcing false here broke sharing for every teacher without that
+        // capability (found in the 2026-07-19 MDL Shield audit pass). Only
+        // force it when it is still ours to set.
         $userssetting = $bc->get_plan()->get_setting('users');
         if ($userssetting->get_status() === \base_setting::NOT_LOCKED) {
             $userssetting->set_value(false);
@@ -191,6 +191,8 @@ class share_upload_task extends \core\task\adhoc_task {
     }
 
     /**
+     * Updates a share's status and timemodified.
+     *
      * @param int $shareid
      * @param string $status
      */

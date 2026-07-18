@@ -118,7 +118,10 @@ if ($structure && !empty($structure['sections'])) {
 }
 
 echo $OUTPUT->heading(get_string('importheading', 'local_oerclient'), 4);
-echo html_writer::start_tag('form', ['method' => 'post', 'action' => new moodle_url('/local/oerclient/resource_preview.php', ['id' => $id])]);
+echo html_writer::start_tag('form', [
+    'method' => 'post',
+    'action' => new moodle_url('/local/oerclient/resource_preview.php', ['id' => $id]),
+]);
 echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
 echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'doimport', 'value' => 1]);
 
@@ -138,7 +141,9 @@ if ($resource['type'] === 'activity') {
     }
 }
 
-echo html_writer::empty_tag('input', ['type' => 'submit', 'value' => get_string('importbutton', 'local_oerclient'), 'class' => 'btn btn-success']);
+echo html_writer::empty_tag('input', [
+    'type' => 'submit', 'value' => get_string('importbutton', 'local_oerclient'), 'class' => 'btn btn-success',
+]);
 echo html_writer::end_tag('form');
 
 echo $OUTPUT->footer();

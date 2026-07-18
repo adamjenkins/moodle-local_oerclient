@@ -16,8 +16,6 @@
 
 namespace local_oerclient;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests for local_oerclient_extend_settings_navigation() (lib.php).
  *

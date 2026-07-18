@@ -19,8 +19,6 @@ namespace local_oerclient;
 use core\hook\navigation\secondary_extend;
 use core\navigation\views\secondary;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests for hook_listener::add_share_link(). Found live (not by this test
  * suite) on 2026-07-18: the original code used empty($PAGE->course) as its
@@ -40,7 +38,6 @@ defined('MOODLE_INTERNAL') || die();
  * @covers     \local_oerclient\hook_listener
  */
 final class hook_listener_test extends \advanced_testcase {
-
     public function test_adds_the_share_node_on_a_real_course_page_for_an_editing_teacher(): void {
         global $PAGE;
         $this->resetAfterTest();

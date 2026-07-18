@@ -21,8 +21,6 @@ use core_privacy\local\request\approved_contextlist;
 use core_privacy\local\request\contextlist;
 use core_privacy\local\request\writer;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Privacy provider for local_oerclient. All data lives under the system
  * context; the plugin also sends data to an external system (the configured

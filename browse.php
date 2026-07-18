@@ -50,16 +50,28 @@ if (empty($exchangeurl) || empty($sitetoken)) {
 }
 
 echo html_writer::start_tag('form', ['method' => 'get', 'action' => new moodle_url('/local/oerclient/browse.php')]);
-echo html_writer::empty_tag('input', ['type' => 'text', 'name' => 'q', 'value' => $query, 'class' => 'form-control d-inline w-auto']);
-echo html_writer::tag('label', get_string('filterbytype', 'local_oerclient'), ['for' => 'oerclient-filter-type', 'class' => 'ms-2 me-1']);
+echo html_writer::empty_tag('input', [
+    'type' => 'text', 'name' => 'q', 'value' => $query, 'class' => 'form-control d-inline w-auto',
+]);
+echo html_writer::tag(
+    'label',
+    get_string('filterbytype', 'local_oerclient'),
+    ['for' => 'oerclient-filter-type', 'class' => 'ms-2 me-1']
+);
 echo html_writer::select(
-    ['' => '', 'course' => get_string('typecourse', 'local_oerclient'), 'activity' => get_string('typeactivity', 'local_oerclient')],
+    [
+        '' => '',
+        'course' => get_string('typecourse', 'local_oerclient'),
+        'activity' => get_string('typeactivity', 'local_oerclient'),
+    ],
     'type',
     $type,
     false,
     ['id' => 'oerclient-filter-type', 'class' => 'form-select d-inline w-auto']
 );
-echo html_writer::empty_tag('input', ['type' => 'submit', 'value' => get_string('searchbutton', 'local_oerclient'), 'class' => 'btn btn-primary ms-2']);
+echo html_writer::empty_tag('input', [
+    'type' => 'submit', 'value' => get_string('searchbutton', 'local_oerclient'), 'class' => 'btn btn-primary ms-2',
+]);
 echo html_writer::end_tag('form');
 
 try {

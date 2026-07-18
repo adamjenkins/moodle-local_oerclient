@@ -19,8 +19,6 @@ namespace local_oerclient\privacy;
 use core_privacy\local\request\approved_contextlist;
 use core_privacy\local\request\writer;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Privacy provider tests for local_oerclient — the first tests this plugin
  * has (MDL Shield audit finding 8, 2026-07-18: tests/ was previously an

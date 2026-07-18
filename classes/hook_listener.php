@@ -19,8 +19,6 @@ namespace local_oerclient;
 use core\hook\navigation\secondary_extend;
 use core\navigation\navigation_node;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Hook listeners for local_oerclient.
  *
@@ -29,7 +27,6 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class hook_listener {
-
     /**
      * Add "Share to OER Exchange" to a course's secondary navigation.
      *
@@ -38,7 +35,7 @@ class hook_listener {
     public static function add_share_link(secondary_extend $hook): void {
         global $PAGE;
 
-        // $PAGE->course is NEVER null/unset — moodle_page defaults it to $SITE
+        // The page's course is NEVER null/unset — moodle_page defaults it to the site
         // — so empty($PAGE->course) is not a valid "no course" check: it
         // consults moodle_page's __isset(), which can report false (making
         // empty() true) even while ->course->id resolves correctly via

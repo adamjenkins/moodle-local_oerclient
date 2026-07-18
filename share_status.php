@@ -41,7 +41,11 @@ $PAGE->set_heading(get_string('sharestatustitle', 'local_oerclient'));
 
 echo $OUTPUT->header();
 
-echo html_writer::tag('p', get_string('sharestatuslabel', 'local_oerclient', get_string('sharestatus_' . $share->status, 'local_oerclient')));
+echo html_writer::tag('p', get_string(
+    'sharestatuslabel',
+    'local_oerclient',
+    get_string('sharestatus_' . $share->status, 'local_oerclient')
+));
 
 if ($share->status === 'failed' && $share->errormessage) {
     echo $OUTPUT->notification(s($share->errormessage), 'error');
@@ -50,7 +54,11 @@ if ($share->status === 'failed' && $share->errormessage) {
 if ($share->status === 'published' && $share->exchangeresourceid) {
     $exchangeurl = get_config('local_oerclient', 'exchangeurl');
     $resourceurl = rtrim($exchangeurl, '/') . '/local/oerexchange/resource.php?id=' . $share->exchangeresourceid;
-    echo html_writer::link($resourceurl, get_string('viewonexchange', 'local_oerclient'), ['class' => 'btn btn-primary', 'target' => '_blank']);
+    echo html_writer::link(
+        $resourceurl,
+        get_string('viewonexchange', 'local_oerclient'),
+        ['class' => 'btn btn-primary', 'target' => '_blank']
+    );
 }
 
 echo $OUTPUT->footer();

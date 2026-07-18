@@ -16,8 +16,6 @@
 
 namespace local_oerclient\local;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Download a resource's .mbz from the Exchange and restore it: a new course
  * for a course-type resource, or into the current course for an
@@ -57,6 +55,8 @@ class import_manager {
     }
 
     /**
+     * Downloads a resource's backup and restores it as a new course, or into an existing one for a single activity.
+     *
      * @param array $resource decoded local_oerexchange_get_resource response
      * @param int $userid importing user
      * @param int|null $targetcourseid required when the resource is an activity — the
@@ -86,7 +86,7 @@ class import_manager {
             $courseid = $newcourse->id;
         }
 
-        // restore_controller takes the name of an already-extracted backup temp
+        // The \restore_controller class takes the name of an already-extracted backup temp
         // directory (under $CFG->tempdir/backup/), not a file path — extract the
         // downloaded .mbz there first (same pattern core uses internally, e.g.
         // backup_general_helper::get_backup_information_from_mbz()).
@@ -129,6 +129,8 @@ class import_manager {
     }
 
     /**
+     * Downloads a signed resource URL to a local temp file.
+     *
      * @param string $url signed download URL
      * @return string local temp path
      */
@@ -146,6 +148,8 @@ class import_manager {
     }
 
     /**
+     * Derives a course shortname from a title, disambiguating against existing courses if needed.
+     *
      * @param string $title
      * @return string a shortname that doesn't collide with an existing course
      */

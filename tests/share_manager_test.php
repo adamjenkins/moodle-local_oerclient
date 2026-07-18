@@ -16,8 +16,6 @@
 
 namespace local_oerclient\local;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests for share_manager::is_valid_license() — the license re-validation
  * added for MDL Shield audit finding (2026-07-18): share.php's POST handler

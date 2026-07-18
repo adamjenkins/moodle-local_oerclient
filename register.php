@@ -63,8 +63,12 @@ if (empty($exchangeurl)) {
     echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'doregister', 'value' => 1]);
     echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
     echo html_writer::tag('label', get_string('sitecontact', 'local_oerclient'));
-    echo html_writer::empty_tag('input', ['type' => 'email', 'name' => 'contact', 'class' => 'form-control mb-2', 'required' => 'required']);
-    echo html_writer::empty_tag('input', ['type' => 'submit', 'value' => get_string('registerbutton', 'local_oerclient'), 'class' => 'btn btn-primary']);
+    echo html_writer::empty_tag('input', [
+        'type' => 'email', 'name' => 'contact', 'class' => 'form-control mb-2', 'required' => 'required',
+    ]);
+    echo html_writer::empty_tag('input', [
+        'type' => 'submit', 'value' => get_string('registerbutton', 'local_oerclient'), 'class' => 'btn btn-primary',
+    ]);
     echo html_writer::end_tag('form');
 }
 

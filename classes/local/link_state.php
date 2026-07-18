@@ -16,8 +16,6 @@
 
 namespace local_oerclient\local;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * CSRF-style state token for the account-linking handshake (index.php ->
  * the Exchange's connect.php -> connect_callback.php).

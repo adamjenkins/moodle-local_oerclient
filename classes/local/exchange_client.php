@@ -16,8 +16,6 @@
 
 namespace local_oerclient\local;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Thin HTTP client for talking to an OER Exchange site: the core WS REST
  * protocol for token-authenticated calls, plus the two plain public
@@ -40,6 +38,8 @@ class exchange_client {
     protected string $exchangeurl;
 
     /**
+     * Creates a client for a specific Exchange site.
+     *
      * @param string $exchangeurl e.g. https://vagrant.wisecat.net
      */
     public function __construct(string $exchangeurl) {
@@ -47,6 +47,8 @@ class exchange_client {
     }
 
     /**
+     * Builds the underlying HTTP client used for every request.
+     *
      * @return \core\http_client
      */
     protected function client(): \core\http_client {
@@ -142,7 +144,8 @@ class exchange_client {
      */
     public function consume_linkcode(string $code): array {
         $client = $this->client();
-        $response = $this->safe_request(fn() => $client->request('GET', $this->exchangeurl . '/local/oerexchange/link_consume.php', [
+        $url = $this->exchangeurl . '/local/oerexchange/link_consume.php';
+        $response = $this->safe_request(fn() => $client->request('GET', $url, [
             'query' => ['code' => $code],
         ]));
         $decoded = json_decode((string) $response->getBody(), true);

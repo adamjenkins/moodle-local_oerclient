@@ -54,6 +54,10 @@ if (empty($exchangeurl) || empty($siteid)) {
 }
 
 echo html_writer::tag('h4', get_string('browseexchange', 'local_oerclient'), ['class' => 'mt-4']);
-echo html_writer::link(new moodle_url('/local/oerclient/browse.php'), get_string('browseexchange', 'local_oerclient'), ['class' => 'btn btn-outline-primary']);
+echo html_writer::link(
+    new moodle_url('/local/oerclient/browse.php'),
+    get_string('browseexchange', 'local_oerclient'),
+    ['class' => 'btn btn-outline-primary']
+);
 
 echo $OUTPUT->footer();

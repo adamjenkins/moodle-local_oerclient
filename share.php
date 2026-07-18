@@ -45,7 +45,12 @@ global $DB, $USER;
 
 $link = $DB->get_record('local_oerclient_link', ['userid' => $USER->id]);
 if (!$link) {
-    redirect(new moodle_url('/local/oerclient/index.php'), get_string('error_notlinked', 'local_oerclient'), null, \core\output\notification::NOTIFY_WARNING);
+    redirect(
+        new moodle_url('/local/oerclient/index.php'),
+        get_string('error_notlinked', 'local_oerclient'),
+        null,
+        \core\output\notification::NOTIFY_WARNING
+    );
 }
 
 if (data_submitted() && confirm_sesskey() && optional_param('dosubmit', 0, PARAM_INT)) {
@@ -99,7 +104,10 @@ echo $OUTPUT->header();
 require_once($CFG->libdir . '/licenselib.php');
 $licenses = \license_manager::get_licenses();
 
-echo html_writer::start_tag('form', ['method' => 'post', 'action' => new moodle_url('/local/oerclient/share.php', ['courseid' => $courseid, 'cmid' => $cmid])]);
+echo html_writer::start_tag('form', [
+    'method' => 'post',
+    'action' => new moodle_url('/local/oerclient/share.php', ['courseid' => $courseid, 'cmid' => $cmid]),
+]);
 echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
 echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'dosubmit', 'value' => 1]);
 
@@ -114,7 +122,9 @@ echo html_writer::tag('label', get_string('sharesummarylabel', 'local_oerclient'
 echo html_writer::tag('textarea', '', ['name' => 'summary', 'class' => 'form-control mb-2', 'required' => 'required']);
 
 echo html_writer::tag('label', get_string('sharelanguagelabel', 'local_oerclient'));
-echo html_writer::empty_tag('input', ['type' => 'text', 'name' => 'language', 'class' => 'form-control mb-2', 'value' => current_language()]);
+echo html_writer::empty_tag('input', [
+    'type' => 'text', 'name' => 'language', 'class' => 'form-control mb-2', 'value' => current_language(),
+]);
 
 echo html_writer::tag('label', get_string('sharetagslabel', 'local_oerclient'));
 echo html_writer::empty_tag('input', ['type' => 'text', 'name' => 'tags', 'class' => 'form-control mb-2']);
@@ -126,7 +136,9 @@ foreach ($licenses as $license) {
 }
 echo html_writer::select($licenseoptions, 'licenseshortname', 'cc-4.0', false, ['class' => 'form-select mb-2']);
 
-echo html_writer::empty_tag('input', ['type' => 'submit', 'value' => get_string('sharesubmit', 'local_oerclient'), 'class' => 'btn btn-primary']);
+echo html_writer::empty_tag('input', [
+    'type' => 'submit', 'value' => get_string('sharesubmit', 'local_oerclient'), 'class' => 'btn btn-primary',
+]);
 echo html_writer::end_tag('form');
 
 echo $OUTPUT->footer();

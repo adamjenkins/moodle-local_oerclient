@@ -16,8 +16,6 @@
 
 namespace local_oerclient\task;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests for share_upload_task::find_existing_resource_id(). Found live,
  * 2026-07-19: re-sharing an already-shared course produced a second,

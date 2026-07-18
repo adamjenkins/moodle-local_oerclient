@@ -18,8 +18,6 @@ namespace local_oerclient;
 
 use local_oerclient\local\import_manager;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests for import_manager::require_import_capability() — the capability
  * re-scoping fixed for MDL Shield audit finding 1c (2026-07-18): course-type

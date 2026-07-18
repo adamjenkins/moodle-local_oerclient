@@ -16,8 +16,6 @@
 
 namespace local_oerclient\local;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Small helpers for the share wizard that need to be independently
  * testable rather than living inline in share.php.

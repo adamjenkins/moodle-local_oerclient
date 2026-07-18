@@ -22,8 +22,6 @@ use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Exception\RequestException;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests for exchange_client — specifically that a failed HTTP request never
  * leaks a live credential into the resulting exception message. Found on
@@ -54,13 +52,24 @@ final class exchange_client_test extends \advanced_testcase {
         $handlerstack = HandlerStack::create($mock);
 
         $client = new class ($handlerstack) extends exchange_client {
+            /** @var \GuzzleHttp\HandlerStack */
             private \GuzzleHttp\HandlerStack $handlerstack;
 
+            /**
+             * Creates a test double pointed at a mock Guzzle handler stack.
+             *
+             * @param \GuzzleHttp\HandlerStack $handlerstack
+             */
             public function __construct(\GuzzleHttp\HandlerStack $handlerstack) {
                 parent::__construct('https://exchange.example');
                 $this->handlerstack = $handlerstack;
             }
 
+            /**
+             * Returns an HTTP client wired to the mock handler stack instead of a real connection.
+             *
+             * @return \core\http_client
+             */
             protected function client(): \core\http_client {
                 return new \core\http_client(['handler' => $this->handlerstack]);
             }
@@ -91,13 +100,24 @@ final class exchange_client_test extends \advanced_testcase {
         $handlerstack = HandlerStack::create($mock);
 
         $client = new class ($handlerstack) extends exchange_client {
+            /** @var \GuzzleHttp\HandlerStack */
             private \GuzzleHttp\HandlerStack $handlerstack;
 
+            /**
+             * Creates a test double pointed at a mock Guzzle handler stack.
+             *
+             * @param \GuzzleHttp\HandlerStack $handlerstack
+             */
             public function __construct(\GuzzleHttp\HandlerStack $handlerstack) {
                 parent::__construct('https://exchange.example');
                 $this->handlerstack = $handlerstack;
             }
 
+            /**
+             * Returns an HTTP client wired to the mock handler stack instead of a real connection.
+             *
+             * @return \core\http_client
+             */
             protected function client(): \core\http_client {
                 return new \core\http_client(['handler' => $this->handlerstack]);
             }
