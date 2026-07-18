@@ -29,6 +29,7 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class hook_listener {
+
     /**
      * Add "Share to OER Exchange" to a course's secondary navigation.
      *
@@ -37,7 +38,14 @@ class hook_listener {
     public static function add_share_link(secondary_extend $hook): void {
         global $PAGE;
 
-        if (empty($PAGE->course) || $PAGE->course->id <= 1) {
+        // $PAGE->course is NEVER null/unset — moodle_page defaults it to $SITE
+        // — so empty($PAGE->course) is not a valid "no course" check: it
+        // consults moodle_page's __isset(), which can report false (making
+        // empty() true) even while ->course->id resolves correctly via
+        // __get(). This silently disabled this hook entirely on every course
+        // page (found live, 2026-07-18, MDL Shield audit follow-up). Compare
+        // the id directly instead.
+        if ($PAGE->course->id <= 1) {
             return;
         }
 
