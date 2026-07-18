@@ -18,7 +18,9 @@ namespace local_oerclient\privacy;
 
 use core_privacy\local\metadata\collection;
 use core_privacy\local\request\approved_contextlist;
+use core_privacy\local\request\approved_userlist;
 use core_privacy\local\request\contextlist;
+use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
 
 /**
@@ -32,6 +34,7 @@ use core_privacy\local\request\writer;
  */
 class provider implements
     \core_privacy\local\metadata\provider,
+    \core_privacy\local\request\core_userlist_provider,
     \core_privacy\local\request\plugin\provider {
     #[\Override]
     public static function get_metadata(collection $collection): collection {
@@ -75,6 +78,42 @@ class provider implements
         }
 
         return $contextlist;
+    }
+
+    #[\Override]
+    public static function get_users_in_context(userlist $userlist): void {
+        $context = $userlist->get_context();
+        if (!$context instanceof \context_system) {
+            return;
+        }
+
+        // All three tables key their per-user rows on a plain 'userid' column
+        // and only ever live at the system context (see get_metadata()), so a
+        // single column selector per table enumerates every affected user.
+        foreach (['local_oerclient_link', 'local_oerclient_shares', 'local_oerclient_imports'] as $table) {
+            $userlist->add_from_sql('userid', "SELECT userid FROM {{$table}}", []);
+        }
+    }
+
+    #[\Override]
+    public static function delete_data_for_users(approved_userlist $userlist): void {
+        global $DB;
+
+        $context = $userlist->get_context();
+        if (!$context instanceof \context_system) {
+            return;
+        }
+
+        $userids = $userlist->get_userids();
+        if (empty($userids)) {
+            return;
+        }
+
+        [$insql, $inparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
+        $select = "userid $insql";
+        $DB->delete_records_select('local_oerclient_link', $select, $inparams);
+        $DB->delete_records_select('local_oerclient_shares', $select, $inparams);
+        $DB->delete_records_select('local_oerclient_imports', $select, $inparams);
     }
 
     #[\Override]

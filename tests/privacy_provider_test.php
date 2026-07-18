@@ -17,6 +17,8 @@
 namespace local_oerclient\privacy;
 
 use core_privacy\local\request\approved_contextlist;
+use core_privacy\local\request\approved_userlist;
+use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
 
 /**
@@ -137,5 +139,85 @@ final class privacy_provider_test extends \core_privacy\tests\provider_testcase 
         provider::delete_data_for_all_users_in_context(\context_course::instance($course->id));
 
         $this->assertEquals(1, $DB->count_records('local_oerclient_link'));
+    }
+
+    /**
+     * get_users_in_context() must report every user with a link, share or
+     * import row at the system context, and only at the system context
+     * (core_userlist_provider completeness — round 1 flagged this interface
+     * as missing).
+     */
+    public function test_get_users_in_context(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $linkuser = $this->getDataGenerator()->create_user();
+        $shareuser = $this->getDataGenerator()->create_user();
+        $importuser = $this->getDataGenerator()->create_user();
+        $nodatauser = $this->getDataGenerator()->create_user();
+        $course = $this->getDataGenerator()->create_course();
+
+        $DB->insert_record('local_oerclient_link', (object) [
+            'userid' => $linkuser->id, 'exchangeuserid' => 5, 'token' => 'abc', 'timecreated' => time(),
+        ]);
+        $DB->insert_record('local_oerclient_shares', (object) [
+            'userid' => $shareuser->id, 'courseid' => $course->id, 'cmid' => null, 'type' => 'course',
+            'title' => 't', 'summary' => '', 'language' => '', 'tags' => '',
+            'licenseshortname' => 'cc-4.0', 'activitytype' => null, 'status' => 'published',
+            'exchangeresourceid' => 1, 'errormessage' => null, 'timecreated' => time(), 'timemodified' => time(),
+        ]);
+        $DB->insert_record('local_oerclient_imports', (object) [
+            'userid' => $importuser->id, 'exchangeresourceid' => 1, 'exchangeversionid' => 1,
+            'courseid' => $course->id, 'timecreated' => time(),
+        ]);
+
+        // System context: all three data-owning users, and not the fourth.
+        $userlist = new userlist(\context_system::instance(), 'local_oerclient');
+        provider::get_users_in_context($userlist);
+        $found = $userlist->get_userids();
+        $this->assertContains((int) $linkuser->id, $found);
+        $this->assertContains((int) $shareuser->id, $found);
+        $this->assertContains((int) $importuser->id, $found);
+        $this->assertNotContains((int) $nodatauser->id, $found);
+
+        // A non-system context (this plugin never stores data there) is empty.
+        $coursecontextlist = new userlist(\context_course::instance($course->id), 'local_oerclient');
+        provider::get_users_in_context($coursecontextlist);
+        $this->assertEmpty($coursecontextlist->get_userids());
+    }
+
+    /**
+     * delete_data_for_users() must remove exactly the approved users' rows at
+     * the system context and leave other users' data intact.
+     */
+    public function test_delete_data_for_users(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $user1 = $this->getDataGenerator()->create_user();
+        $user2 = $this->getDataGenerator()->create_user();
+
+        foreach ([$user1, $user2] as $u) {
+            $DB->insert_record('local_oerclient_link', (object) [
+                'userid' => $u->id, 'exchangeuserid' => 5, 'token' => 'abc', 'timecreated' => time(),
+            ]);
+        }
+
+        // Approve only user1 for deletion.
+        $approved = new approved_userlist(\context_system::instance(), 'local_oerclient', [$user1->id]);
+        provider::delete_data_for_users($approved);
+
+        $this->assertEquals(0, $DB->count_records('local_oerclient_link', ['userid' => $user1->id]));
+        $this->assertEquals(1, $DB->count_records('local_oerclient_link', ['userid' => $user2->id]));
+
+        // A non-system context is a safe no-op.
+        $course = $this->getDataGenerator()->create_course();
+        $approvedcourse = new approved_userlist(
+            \context_course::instance($course->id),
+            'local_oerclient',
+            [$user2->id]
+        );
+        provider::delete_data_for_users($approvedcourse);
+        $this->assertEquals(1, $DB->count_records('local_oerclient_link', ['userid' => $user2->id]));
     }
 }
