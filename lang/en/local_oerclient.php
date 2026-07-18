@@ -47,6 +47,7 @@ $string['privacy:metadata:oerexchange:token'] = 'Your personal web service token
 $string['privacy:metadata:oerexchange:sharedcontent'] = 'The sanitized (no user data) course/activity backup you chose to share.';
 
 // Settings.
+$string['generalsettings'] = 'General settings';
 $string['settingsheading'] = 'OER Exchange connection';
 $string['settingsheading_desc'] = 'Configure which OER Exchange this site talks to. Register first, then paste the site key you receive by email into "Site token" below.';
 $string['settings_exchangeurl'] = 'Exchange URL';

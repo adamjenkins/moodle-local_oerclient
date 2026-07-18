@@ -25,8 +25,15 @@
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
-    $settings = new admin_settingpage('local_oerclient', get_string('pluginname', 'local_oerclient'));
-    $ADMIN->add('localplugins', $settings);
+    // Own category, nested under Plugins, instead of sharing the generic
+    // "Local plugins" list indistinguishable from every other local plugin.
+    $ADMIN->add('localplugins', new admin_category(
+        'local_oerclient_category',
+        get_string('pluginname', 'local_oerclient')
+    ));
+
+    $settings = new admin_settingpage('local_oerclient', get_string('generalsettings', 'local_oerclient'));
+    $ADMIN->add('local_oerclient_category', $settings);
 
     $settings->add(new admin_setting_heading(
         'local_oerclient/heading',
@@ -57,7 +64,7 @@ if ($hassiteconfig) {
         ''
     ));
 
-    $ADMIN->add('localplugins', new admin_externalpage(
+    $ADMIN->add('local_oerclient_category', new admin_externalpage(
         'local_oerclient_register',
         get_string('registertitle', 'local_oerclient'),
         new moodle_url('/local/oerclient/register.php'),

@@ -5,10 +5,8 @@ a central OER Exchange (`local_oerexchange`, installed elsewhere). It lets
 you share courses or activities to the Exchange's public catalogue, browse
 what other teachers have shared, and import resources into your own site.
 
-For architecture and implementation notes, see the platform design
-documentation (`dev-docs/oer-platform/DESIGN.md` in the development
-workspace) — this document is for people *using* the plugin, not developing
-it.
+This document is for people *using* the plugin, not developing it — see the
+repository's own source and commit history for implementation details.
 
 ## Contents
 
