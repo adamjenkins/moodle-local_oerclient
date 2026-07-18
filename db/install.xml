@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/oerclient/db" VERSION="20260718" COMMENT="XMLDB file for Moodle local/oerclient"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="local_oerclient_link" COMMENT="Per-teacher personal link to an Exchange account">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="Local Moodle userid"/>
+        <FIELD NAME="exchangeuserid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="Userid on the Exchange"/>
+        <FIELD NAME="token" TYPE="char" LENGTH="255" NOTNULL="true" COMMENT="Personal WS token for the Exchange"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="userid" UNIQUE="true" FIELDS="userid"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="local_oerclient_shares" COMMENT="Outgoing shares (course or activity) to the Exchange">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="cmid" TYPE="int" LENGTH="10" NOTNULL="false" COMMENT="Set when sharing a single activity"/>
+        <FIELD NAME="type" TYPE="char" LENGTH="20" NOTNULL="true" COMMENT="course|activity"/>
+        <FIELD NAME="title" TYPE="char" LENGTH="255" NOTNULL="true"/>
+        <FIELD NAME="summary" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="language" TYPE="char" LENGTH="30" NOTNULL="false"/>
+        <FIELD NAME="tags" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="licenseshortname" TYPE="char" LENGTH="255" NOTNULL="false"/>
+        <FIELD NAME="activitytype" TYPE="char" LENGTH="100" NOTNULL="false"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="pending" COMMENT="pending|backingup|uploading|published|failed"/>
+        <FIELD NAME="exchangeresourceid" TYPE="int" LENGTH="10" NOTNULL="false"/>
+        <FIELD NAME="errormessage" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="userid" UNIQUE="false" FIELDS="userid"/>
+        <INDEX NAME="status" UNIQUE="false" FIELDS="status"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="local_oerclient_imports" COMMENT="Completed imports from the Exchange">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="false"/>
+        <FIELD NAME="exchangeresourceid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="exchangeversionid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="Local course the resource was imported into"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>

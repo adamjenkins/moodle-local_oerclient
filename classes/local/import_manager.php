@@ -1,0 +1,158 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+namespace local_oerclient\local;
+
+defined('MOODLE_INTERNAL') || die();
+
+/**
+ * Download a resource's .mbz from the Exchange and restore it: a new course
+ * for a course-type resource, or into the current course for an
+ * activity-type resource. See DESIGN.md §1 flow 2 "Browse/import".
+ *
+ * Synchronous by design (v1 simplification vs. the "import task" wording in
+ * DESIGN.md) — restore is already a synchronous web-request operation
+ * elsewhere in core (e.g. course/restorefile.php), so this matches existing
+ * Moodle UX rather than adding queueing complexity for comparable wait time.
+ *
+ * @package    local_oerclient
+ * @copyright  2026 Adam Jenkins <adam@wisecat.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class import_manager {
+    /**
+     * @param array $resource decoded local_oerexchange_get_resource response
+     * @param int $userid importing user
+     * @param int|null $targetcourseid required when the resource is an activity — the
+     *                                 course to import the activity into
+     * @return array {courseid, checklist} — checklist is a list of localization hints
+     */
+    public static function import(array $resource, int $userid, ?int $targetcourseid = null): array {
+        global $CFG, $DB;
+
+        require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
+
+        $tmppath = self::download($resource['downloadurl']);
+
+        if ($resource['type'] === 'activity') {
+            if (!$targetcourseid) {
+                throw new \moodle_exception('error_targetcourserequired', 'local_oerclient');
+            }
+            $courseid = $targetcourseid;
+        } else {
+            $category = \core_course_category::get_default();
+            $newcourse = create_course((object) [
+                'fullname' => $resource['title'],
+                'shortname' => self::unique_shortname($resource['title']),
+                'category' => $category->id,
+                'visible' => 0, // Hidden until the teacher reviews the localization checklist.
+            ]);
+            $courseid = $newcourse->id;
+        }
+
+        // restore_controller takes the name of an already-extracted backup temp
+        // directory (under $CFG->tempdir/backup/), not a file path — extract the
+        // downloaded .mbz there first (same pattern core uses internally, e.g.
+        // backup_general_helper::get_backup_information_from_mbz()).
+        $backupid = 'oerclientimport_' . time() . '_' . random_string(4);
+        $extractdir = make_backup_temp_directory($backupid);
+        $fp = get_file_packer('application/vnd.moodle.backup');
+        $fp->extract_to_pathname($tmppath, $extractdir);
+
+        $rc = new \restore_controller(
+            $backupid,
+            $courseid,
+            \backup::INTERACTIVE_NO,
+            \backup::MODE_GENERAL,
+            $userid,
+            $resource['type'] === 'activity' ? \backup::TARGET_CURRENT_ADDING : \backup::TARGET_NEW_COURSE
+        );
+
+        if (!$rc->execute_precheck()) {
+            $rc->destroy();
+            @unlink($tmppath);
+            throw new \moodle_exception('error_restoreprecheckfailed', 'local_oerclient');
+        }
+
+        $rc->execute_plan();
+        $rc->destroy();
+        @unlink($tmppath);
+
+        $DB->insert_record('local_oerclient_imports', (object) [
+            'userid' => $userid,
+            'exchangeresourceid' => $resource['id'],
+            'exchangeversionid' => $resource['versionid'],
+            'courseid' => $courseid,
+            'timecreated' => time(),
+        ]);
+
+        return [
+            'courseid' => $courseid,
+            'checklist' => self::localization_checklist($resource),
+        ];
+    }
+
+    /**
+     * @param string $url signed download URL
+     * @return string local temp path
+     */
+    protected static function download(string $url): string {
+        // See exchange_client's dev-harness note: self-signed certs + a
+        // private-network Exchange host in this environment.
+        $client = new \core\http_client(['verify' => false, 'ignoresecurity' => true]);
+        $response = $client->request('GET', $url);
+
+        $tmpdir = make_temp_directory('oerclient/import_' . time() . '_' . random_string(4));
+        $tmppath = $tmpdir . '/import.mbz';
+        file_put_contents($tmppath, (string) $response->getBody());
+
+        return $tmppath;
+    }
+
+    /**
+     * @param string $title
+     * @return string a shortname that doesn't collide with an existing course
+     */
+    protected static function unique_shortname(string $title): string {
+        global $DB;
+
+        $base = clean_param(str_replace(' ', '-', strtolower($title)), PARAM_ALPHANUMEXT) ?: 'oer-import';
+        $base = substr($base, 0, 80);
+        $candidate = $base;
+        $suffix = 1;
+        while ($DB->record_exists('course', ['shortname' => $candidate])) {
+            $suffix++;
+            $candidate = $base . '-' . $suffix;
+        }
+        return $candidate;
+    }
+
+    /**
+     * A short, generic set of "you probably want to change these" hints —
+     * the post-import localization checklist from DESIGN.md §1.
+     *
+     * @param array $resource
+     * @return string[]
+     */
+    protected static function localization_checklist(array $resource): array {
+        return [
+            get_string('checklist_dates', 'local_oerclient'),
+            get_string('checklist_names', 'local_oerclient'),
+            get_string('checklist_visibility', 'local_oerclient'),
+            get_string('checklist_grading', 'local_oerclient'),
+        ];
+    }
+}
