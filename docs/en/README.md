@@ -57,9 +57,10 @@ affected).
 
 ## For teachers: sharing a course or activity
 
-1. Open the course you want to share. A **Share to OER Exchange** link
-   appears in the course's secondary navigation (you need editing rights in
-   the course).
+1. Open the course you want to share. **Share to OER Exchange** is not a
+   top-level tab — click **More ▾** in the course's secondary navigation
+   (you need editing rights in the course) and it's the last item in the
+   menu that opens.
 2. Fill in the wizard:
    - **Title** — prefilled from the course/activity name; edit as needed.
    - **Summary** — describe what it's for and who it's aimed at.
@@ -74,7 +75,10 @@ affected).
    published* (or *failed*, with an error message, if something went
    wrong). Once published, a link to view it on the Exchange appears.
 4. Sharing a **single activity** instead of the whole course works the same
-   way from that activity's own share link, where available.
+   way: open the activity, click **More ▾** in its own secondary navigation,
+   and **Share to OER Exchange** is the last item there too. The wizard's
+   **Title** field prefills with the activity's own name (not the course
+   name) so you can tell you're sharing the activity, not the whole course.
 
 Re-sharing an already-shared course (after you've updated it) adds a new
 version to the same catalogue entry rather than creating a duplicate.
