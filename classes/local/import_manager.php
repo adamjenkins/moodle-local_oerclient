@@ -64,14 +64,17 @@ class import_manager {
      * @return array {courseid, checklist} — checklist is a list of localization hints
      */
     public static function import(array $resource, int $userid, ?int $targetcourseid = null): array {
-        global $CFG, $DB;
-
-        require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
+        global $DB;
 
         $tmppath = self::download($resource['downloadurl']);
 
+        // Track a course we create for this import (course-type only) so a
+        // restore that fails *after* the course exists doesn't leave an empty
+        // orphan course behind — see restore_into()'s cleanup.
+        $createdcourseid = null;
         if ($resource['type'] === 'activity') {
             if (!$targetcourseid) {
+                @unlink($tmppath);
                 throw new \moodle_exception('error_targetcourserequired', 'local_oerclient');
             }
             $courseid = $targetcourseid;
@@ -84,35 +87,10 @@ class import_manager {
                 'visible' => 0, // Hidden until the teacher reviews the localization checklist.
             ]);
             $courseid = $newcourse->id;
+            $createdcourseid = (int) $newcourse->id;
         }
 
-        // The \restore_controller class takes the name of an already-extracted backup temp
-        // directory (under $CFG->tempdir/backup/), not a file path — extract the
-        // downloaded .mbz there first (same pattern core uses internally, e.g.
-        // backup_general_helper::get_backup_information_from_mbz()).
-        $backupid = 'oerclientimport_' . time() . '_' . random_string(4);
-        $extractdir = make_backup_temp_directory($backupid);
-        $fp = get_file_packer('application/vnd.moodle.backup');
-        $fp->extract_to_pathname($tmppath, $extractdir);
-
-        $rc = new \restore_controller(
-            $backupid,
-            $courseid,
-            \backup::INTERACTIVE_NO,
-            \backup::MODE_GENERAL,
-            $userid,
-            $resource['type'] === 'activity' ? \backup::TARGET_CURRENT_ADDING : \backup::TARGET_NEW_COURSE
-        );
-
-        if (!$rc->execute_precheck()) {
-            $rc->destroy();
-            @unlink($tmppath);
-            throw new \moodle_exception('error_restoreprecheckfailed', 'local_oerclient');
-        }
-
-        $rc->execute_plan();
-        $rc->destroy();
-        @unlink($tmppath);
+        self::restore_into($tmppath, (int) $courseid, $resource['type'], $userid, $createdcourseid);
 
         $DB->insert_record('local_oerclient_imports', (object) [
             'userid' => $userid,
@@ -126,6 +104,68 @@ class import_manager {
             'courseid' => $courseid,
             'checklist' => self::localization_checklist($resource),
         ];
+    }
+
+    /**
+     * Extracts a downloaded .mbz and restores it into $courseid. If the
+     * restore fails at any stage and this import created a fresh course for
+     * it ($createdcourseid), that now-empty course is deleted so a failed
+     * import can't leave an orphan course behind. The temp .mbz is always
+     * removed.
+     *
+     * @param string $tmppath local path to the downloaded .mbz
+     * @param int $courseid course to restore into
+     * @param string $type 'course'|'activity'
+     * @param int $userid restoring user
+     * @param int|null $createdcourseid course this import created (to roll back on failure), or null
+     * @throws \moodle_exception|\Throwable if the restore fails
+     */
+    protected static function restore_into(
+        string $tmppath,
+        int $courseid,
+        string $type,
+        int $userid,
+        ?int $createdcourseid
+    ): void {
+        global $CFG;
+
+        require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
+
+        try {
+            // The \restore_controller class takes the name of an already-extracted backup
+            // temp directory (under $CFG->tempdir/backup/), not a file path — extract the
+            // downloaded .mbz there first (same pattern core uses internally, e.g.
+            // backup_general_helper::get_backup_information_from_mbz()).
+            $backupid = 'oerclientimport_' . time() . '_' . random_string(4);
+            $extractdir = make_backup_temp_directory($backupid);
+            $fp = get_file_packer('application/vnd.moodle.backup');
+            $fp->extract_to_pathname($tmppath, $extractdir);
+
+            $rc = new \restore_controller(
+                $backupid,
+                $courseid,
+                \backup::INTERACTIVE_NO,
+                \backup::MODE_GENERAL,
+                $userid,
+                $type === 'activity' ? \backup::TARGET_CURRENT_ADDING : \backup::TARGET_NEW_COURSE
+            );
+
+            if (!$rc->execute_precheck()) {
+                $rc->destroy();
+                throw new \moodle_exception('error_restoreprecheckfailed', 'local_oerclient');
+            }
+
+            $rc->execute_plan();
+            $rc->destroy();
+        } catch (\Throwable $e) {
+            if ($createdcourseid) {
+                delete_course($createdcourseid, false);
+            }
+            @unlink($tmppath);
+            throw $e;
+        }
+
+        @unlink($tmppath);
     }
 
     /**
