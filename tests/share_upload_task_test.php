@@ -104,4 +104,44 @@ final class share_upload_task_test extends \advanced_testcase {
         $share = (object) ['userid' => $user->id, 'courseid' => 5, 'cmid' => 9];
         $this->assertSame(0, $this->call($share));
     }
+
+    /**
+     * MDL Shield audit finding (2026-07-18): the task used to run the backup
+     * (and upload it to the Exchange) purely on the strength of a share
+     * record created earlier by a synchronous request-time capability check,
+     * without re-checking that capability at execute() time — the same
+     * "async sink never rechecked the capability" pattern flagged in
+     * report_discoursestats. If the sharing user's local/oerclient:share
+     * capability in that course is gone by the time the adhoc task runs
+     * (role change, unenrolment), execute() must now fail cleanly instead of
+     * still backing up and publishing the course/activity.
+     */
+    public function test_execute_fails_cleanly_when_the_sharing_user_no_longer_has_the_capability(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        // Deliberately not enrolled/given any role in the course — mirrors a
+        // teacher who shared, then was unenrolled before the task ran.
+        $user = $this->getDataGenerator()->create_user();
+
+        $shareid = $DB->insert_record('local_oerclient_shares', (object) [
+            'userid' => $user->id, 'courseid' => $course->id, 'cmid' => null, 'type' => 'course',
+            'title' => 't', 'summary' => '', 'language' => '', 'tags' => '',
+            'licenseshortname' => 'cc-4.0', 'activitytype' => null, 'status' => 'pending',
+            'exchangeresourceid' => null, 'errormessage' => null,
+            'timecreated' => time(), 'timemodified' => time(),
+        ]);
+
+        $task = new share_upload_task();
+        $task->set_custom_data(['shareid' => $shareid]);
+        $task->execute();
+
+        $share = $DB->get_record('local_oerclient_shares', ['id' => $shareid], '*', MUST_EXIST);
+        $this->assertSame('failed', $share->status);
+        $this->assertSame(
+            get_string('error_sharecapabilitylost', 'local_oerclient'),
+            $share->errormessage
+        );
+    }
 }

@@ -71,6 +71,9 @@ $string['error_notlinked'] = 'Link your personal Exchange account first.';
 $string['error_targetcourserequired'] = 'A target course is required to import a single activity.';
 $string['error_restoreprecheckfailed'] = 'The restore precheck failed for this backup.';
 $string['error_notargetcourses'] = 'You do not have permission to import into any course.';
+$string['error_invalidlicense'] = 'Choose a license from the list provided.';
+$string['error_invalidlinkstate'] = 'This account-linking request could not be verified. Please try linking your account again.';
+$string['error_sharecapabilitylost'] = 'You no longer have permission to share this course or activity.';
 $string['exchangeerror'] = 'Exchange error: {$a}';
 
 // Account linking.

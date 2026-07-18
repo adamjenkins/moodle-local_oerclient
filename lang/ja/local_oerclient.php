@@ -71,6 +71,9 @@ $string['error_notlinked'] = 'まずあなたのExchangeアカウントをリン
 $string['error_targetcourserequired'] = '単一の活動をインポートするには、対象コースの指定が必要です。';
 $string['error_restoreprecheckfailed'] = 'このバックアップの復元事前チェックに失敗しました。';
 $string['error_notargetcourses'] = 'インポート先として利用できるコースへの権限がありません。';
+$string['error_invalidlicense'] = '一覧にあるライセンスから選択してください。';
+$string['error_invalidlinkstate'] = 'このアカウントリンクのリクエストを確認できませんでした。もう一度アカウントのリンクをお試しください。';
+$string['error_sharecapabilitylost'] = 'このコースまたは活動を共有する権限がなくなりました。';
 $string['exchangeerror'] = 'Exchangeエラー: {$a}';
 
 // Account linking.

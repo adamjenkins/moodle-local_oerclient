@@ -25,12 +25,23 @@
  */
 
 use local_oerclient\local\exchange_client;
+use local_oerclient\local\link_state;
 
 require(__DIR__ . '/../../config.php');
 require_login();
 
 $linkcode = required_param('linkcode', PARAM_ALPHANUM);
+$state = required_param('state', PARAM_ALPHANUM);
 $returnurl = optional_param('returnurl', '', PARAM_LOCALURL);
+
+// The state token was minted by index.php for this session before sending
+// the user to the Exchange; verifying it here stops a linkcode an attacker
+// obtained from their own Exchange connect flow from being used to link a
+// victim's Moodle account to the attacker's Exchange identity (see
+// link_state's docblock for the full attack).
+if (!link_state::verify($state)) {
+    throw new moodle_exception('error_invalidlinkstate', 'local_oerclient');
+}
 
 $PAGE->set_url('/local/oerclient/connect_callback.php', ['linkcode' => $linkcode]);
 $PAGE->set_context(context_system::instance());

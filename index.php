@@ -23,6 +23,7 @@
  */
 
 use local_oerclient\local\exchange_client;
+use local_oerclient\local\link_state;
 
 require(__DIR__ . '/../../config.php');
 require_login();
@@ -45,7 +46,7 @@ if (empty($exchangeurl) || empty($siteid)) {
 } else if (!$link) {
     echo html_writer::tag('p', get_string('connectintro', 'local_oerclient'));
     $client = new exchange_client($exchangeurl);
-    $callback = new moodle_url('/local/oerclient/connect_callback.php');
+    $callback = new moodle_url('/local/oerclient/connect_callback.php', ['state' => link_state::issue()]);
     $connecturl = $client->connect_url($siteid, $callback);
     echo html_writer::link($connecturl, get_string('linkaccount', 'local_oerclient'), ['class' => 'btn btn-primary']);
 } else {

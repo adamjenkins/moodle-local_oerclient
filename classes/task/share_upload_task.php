@@ -46,6 +46,19 @@ class share_upload_task extends \core\task\adhoc_task {
         }
 
         try {
+            // The synchronous share.php request checked local/oerclient:share at
+            // submission time, but this task can run well after that (queued
+            // adhoc tasks are picked up by the next cron run) — re-check it here
+            // against the sharing user's *current* capability so a role
+            // change/unenrolment between submission and execution can't let a
+            // course/activity backup still go out to the Exchange (MDL Shield
+            // audit finding, 2026-07-18: async sinks must re-check capabilities,
+            // not just trust that the synchronous request-time check still holds).
+            $sharecontext = \context_course::instance($share->courseid);
+            if (!has_capability('local/oerclient:share', $sharecontext, $share->userid)) {
+                throw new \moodle_exception('error_sharecapabilitylost', 'local_oerclient');
+            }
+
             $this->set_status($shareid, 'backingup');
 
             $link = $DB->get_record('local_oerclient_link', ['userid' => $share->userid]);

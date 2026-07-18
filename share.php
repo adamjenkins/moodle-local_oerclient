@@ -23,6 +23,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use local_oerclient\local\share_manager;
+
 require(__DIR__ . '/../../config.php');
 require_login();
 
@@ -54,6 +56,14 @@ if (data_submitted() && confirm_sesskey() && optional_param('dosubmit', 0, PARAM
         $activitytype = $cm->modname;
     }
 
+    // Re-validate against the same menu the <select> below was built from —
+    // required_param() alone only confirms it's a string, not that it's one
+    // of the licenses actually offered (MDL Shield audit finding, 2026-07-18).
+    $licenseshortname = required_param('licenseshortname', PARAM_TEXT);
+    if (!share_manager::is_valid_license($licenseshortname)) {
+        throw new moodle_exception('error_invalidlicense', 'local_oerclient');
+    }
+
     $shareid = $DB->insert_record('local_oerclient_shares', (object) [
         'userid' => $USER->id,
         'courseid' => $courseid,
@@ -63,7 +73,7 @@ if (data_submitted() && confirm_sesskey() && optional_param('dosubmit', 0, PARAM
         'summary' => required_param('summary', PARAM_TEXT),
         'language' => optional_param('language', '', PARAM_TEXT),
         'tags' => optional_param('tags', '', PARAM_TEXT),
-        'licenseshortname' => required_param('licenseshortname', PARAM_TEXT),
+        'licenseshortname' => $licenseshortname,
         'activitytype' => $activitytype ?: null,
         'status' => 'pending',
         'exchangeresourceid' => null,
