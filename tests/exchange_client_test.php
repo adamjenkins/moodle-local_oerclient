@@ -133,4 +133,26 @@ final class exchange_client_test extends \advanced_testcase {
         $this->assertStringNotContainsString('a-real-token', (string) $capturedrequest->getUri());
         $this->assertStringContainsString('a-real-token', (string) $capturedrequest->getBody());
     }
+
+    /**
+     * Found in a 2026-07-19 code review of the sibling block_oerclient:
+     * neither Guzzle nor core\http_client default to a request timeout
+     * (Guzzle's default is 0 = wait forever, and a hung socket read doesn't
+     * count against PHP's max_execution_time), so an Exchange that accepts
+     * a connection but never responds would hang every caller indefinitely
+     * - including block_oerclient's Dashboard panel, which makes this call
+     * synchronously on every page load for every user. Asserts the fix:
+     * bounded connect/total timeouts on the client every call site shares.
+     */
+    public function test_the_http_client_has_bounded_timeouts(): void {
+        $this->resetAfterTest();
+
+        $client = new exchange_client('https://exchange.example');
+        $method = new \ReflectionMethod(exchange_client::class, 'client');
+        $method->setAccessible(true);
+        $httpclient = $method->invoke($client);
+
+        $this->assertGreaterThan(0, $httpclient->getConfig('connect_timeout'));
+        $this->assertGreaterThan(0, $httpclient->getConfig('timeout'));
+    }
 }

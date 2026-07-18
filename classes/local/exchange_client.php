@@ -49,10 +49,26 @@ class exchange_client {
     /**
      * Builds the underlying HTTP client used for every request.
      *
+     * Bounded connect/total timeouts: neither Guzzle nor core\http_client
+     * default to one (Guzzle's default is 0 = wait forever), and a hung
+     * socket read doesn't count against PHP's max_execution_time. Without
+     * this, a slow/half-hung Exchange stalls every caller indefinitely -
+     * including block_oerclient's Dashboard panel, which makes this same
+     * call synchronously on every page load for every user (found in a
+     * 2026-07-19 code review of the sibling block). A timeout surfaces as
+     * GuzzleHttp\Exception\ConnectException, itself a GuzzleException, so
+     * safe_request()'s existing catch already handles it - no other change
+     * needed to propagate this as a normal exchangeerror.
+     *
      * @return \core\http_client
      */
     protected function client(): \core\http_client {
-        return new \core\http_client(['verify' => false, 'ignoresecurity' => true]);
+        return new \core\http_client([
+            'verify' => false,
+            'ignoresecurity' => true,
+            'connect_timeout' => 3,
+            'timeout' => 10,
+        ]);
     }
 
     /**
