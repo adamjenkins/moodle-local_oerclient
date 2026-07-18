@@ -34,6 +34,29 @@ defined('MOODLE_INTERNAL') || die();
  */
 class import_manager {
     /**
+     * Authorize an import for the current user. Activity-type resources have
+     * a real target course context to check our own capability against;
+     * course-type resources create a brand-new course, for which the correct
+     * gate is core's own moodle/course:create (local/oerclient:import is
+     * declared course-scoped and would be checked against no real context —
+     * see MDL Shield audit finding 1c, 2026-07-18).
+     *
+     * @param string $resourcetype 'course'|'activity'
+     * @param int|null $targetcourseid required for 'activity'
+     * @throws \required_capability_exception|\moodle_exception
+     */
+    public static function require_import_capability(string $resourcetype, ?int $targetcourseid): void {
+        if ($resourcetype === 'activity') {
+            if (!$targetcourseid) {
+                throw new \moodle_exception('error_targetcourserequired', 'local_oerclient');
+            }
+            require_capability('local/oerclient:import', \context_course::instance($targetcourseid));
+        } else {
+            require_capability('moodle/course:create', \context_system::instance());
+        }
+    }
+
+    /**
      * @param array $resource decoded local_oerexchange_get_resource response
      * @param int $userid importing user
      * @param int|null $targetcourseid required when the resource is an activity — the

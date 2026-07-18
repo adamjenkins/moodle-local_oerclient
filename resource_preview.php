@@ -49,11 +49,9 @@ $PAGE->set_heading($resource['title']);
 global $DB, $USER;
 
 if (data_submitted() && confirm_sesskey() && optional_param('doimport', 0, PARAM_INT)) {
-    require_capability('local/oerclient:import', context_system::instance());
     $targetcourseid = optional_param('targetcourseid', 0, PARAM_INT);
-    if ($targetcourseid) {
-        require_capability('local/oerclient:import', context_course::instance($targetcourseid));
-    }
+
+    import_manager::require_import_capability($resource['type'], $targetcourseid ?: null);
 
     $importresult = import_manager::import($resource, $USER->id, $targetcourseid ?: null);
 
