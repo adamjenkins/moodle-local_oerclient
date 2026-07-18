@@ -144,4 +144,50 @@ final class share_upload_task_test extends \advanced_testcase {
             $share->errormessage
         );
     }
+
+    /**
+     * MDL Shield audit finding (2026-07-18, found live while verifying the
+     * capability-recheck fix above): run_backup() used to call
+     * $bc->get_plan()->get_setting('users')->set_value(false) unconditionally.
+     * backup_controller's own constructor already runs check_security(),
+     * which locks that setting to false (LOCKED_BY_PERMISSION) for any user
+     * lacking moodle/backup:userinfo — which editingteacher does NOT have by
+     * default in stock Moodle, only manager/admin do. Core's
+     * base_setting::set_value() throws on ANY set_value() call once locked,
+     * even to the value it's already at, so the plugin's own redundant call
+     * broke sharing for its actual target audience (ordinary teachers) and
+     * only ever worked for admins. This test proves an editingteacher-only
+     * user can now run a full backup without hitting that exception.
+     */
+    public function test_run_backup_succeeds_for_a_teacher_without_backup_userinfo_capability(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
+
+        $course = $this->getDataGenerator()->create_course();
+        $user = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, 'editingteacher');
+
+        // Sanity check: this is exactly the condition that broke sharing —
+        // editingteacher has local/oerclient:share but not this core capability.
+        $coursecontext = \context_course::instance($course->id);
+        $this->assertFalse(has_capability('moodle/backup:userinfo', $coursecontext, $user->id));
+
+        $share = (object) [
+            'id' => 0,
+            'userid' => $user->id,
+            'courseid' => $course->id,
+            'cmid' => null,
+            'type' => 'course',
+        ];
+
+        $task = new share_upload_task();
+        $method = new \ReflectionMethod(share_upload_task::class, 'run_backup');
+        $method->setAccessible(true);
+
+        // Must not throw base_setting_exception('setting_locked_by_permission').
+        $tmppath = $method->invoke($task, $share);
+        $this->assertFileExists($tmppath);
+        @unlink($tmppath);
+    }
 }
