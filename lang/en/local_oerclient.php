@@ -87,6 +87,7 @@ $string['requiredplugins'] = 'Required plugins';
 $string['plugininstalled'] = 'installed here';
 $string['pluginmissing'] = 'not installed — will be skipped';
 $string['structurepreview'] = 'Structure preview';
+$string['sectionnumber'] = 'Section {$a}';
 
 // Share wizard.
 $string['sharetoexchange'] = 'Share to OER Exchange';
