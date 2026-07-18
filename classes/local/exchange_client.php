@@ -54,6 +54,26 @@ class exchange_client {
     }
 
     /**
+     * Run an HTTP request, converting any Guzzle-level failure (network
+     * error, non-2xx response, timeout) into a moodle_exception with a
+     * generic message. Guzzle's default RequestException::getMessage()
+     * embeds the full request URI — including any token passed as a query
+     * parameter — and callers of this client (share_upload_task) persist
+     * exception messages verbatim into a user-facing DB field, so a raw
+     * Guzzle message here would risk writing a live credential into storage.
+     *
+     * @param \Closure $request
+     * @return \Psr\Http\Message\ResponseInterface
+     */
+    protected function safe_request(\Closure $request): \Psr\Http\Message\ResponseInterface {
+        try {
+            return $request();
+        } catch (\GuzzleHttp\Exception\GuzzleException $e) {
+            throw new \moodle_exception('exchangeerror', 'local_oerclient', '', 'request to the Exchange failed');
+        }
+    }
+
+    /**
      * Call a WS function via the core REST protocol.
      *
      * @param string $function e.g. local_oerexchange_search
@@ -64,13 +84,13 @@ class exchange_client {
      */
     public function call(string $function, array $params, string $token): array {
         $client = $this->client();
-        $response = $client->request('POST', $this->exchangeurl . '/webservice/rest/server.php', [
+        $response = $this->safe_request(fn() => $client->request('POST', $this->exchangeurl . '/webservice/rest/server.php', [
             'form_params' => array_merge($params, [
                 'wstoken' => $token,
                 'wsfunction' => $function,
                 'moodlewsrestformat' => 'json',
             ]),
-        ]);
+        ]));
 
         $decoded = json_decode((string) $response->getBody(), true);
         if (is_array($decoded) && isset($decoded['exception'])) {
@@ -90,9 +110,9 @@ class exchange_client {
      */
     public function register(string $name, string $url, string $contact): int {
         $client = $this->client();
-        $response = $client->request('POST', $this->exchangeurl . '/local/oerexchange/register.php', [
+        $response = $this->safe_request(fn() => $client->request('POST', $this->exchangeurl . '/local/oerexchange/register.php', [
             'form_params' => ['name' => $name, 'url' => $url, 'contact' => $contact],
-        ]);
+        ]));
         $decoded = json_decode((string) $response->getBody(), true);
         if (empty($decoded['siteid'])) {
             throw new \moodle_exception('exchangeerror', 'local_oerclient', '', $decoded['error'] ?? 'unknown error');
@@ -122,9 +142,9 @@ class exchange_client {
      */
     public function consume_linkcode(string $code): array {
         $client = $this->client();
-        $response = $client->request('GET', $this->exchangeurl . '/local/oerexchange/link_consume.php', [
+        $response = $this->safe_request(fn() => $client->request('GET', $this->exchangeurl . '/local/oerexchange/link_consume.php', [
             'query' => ['code' => $code],
-        ]);
+        ]));
         $decoded = json_decode((string) $response->getBody(), true);
         if (empty($decoded['token'])) {
             throw new \moodle_exception('exchangeerror', 'local_oerclient', '', $decoded['error'] ?? 'unknown error');
@@ -141,15 +161,25 @@ class exchange_client {
      * @return int the resulting draftitemid
      */
     public function upload_file(string $token, string $filepath, string $filename): int {
+        // The token travels in the multipart POST body, not the query string —
+        // webservice/upload.php's required_param('token', ...) accepts either,
+        // and Guzzle's default exception messages embed the request URI (but
+        // not the body), so keeping it out of the URI keeps it out of any
+        // error message safe_request() has to fall back to.
         $client = $this->client();
-        $response = $client->request('POST', $this->exchangeurl . '/webservice/upload.php', [
-            'query' => ['token' => $token],
-            'multipart' => [[
-                'name' => 'file_1',
-                'contents' => fopen($filepath, 'rb'),
-                'filename' => $filename,
-            ]],
-        ]);
+        $response = $this->safe_request(fn() => $client->request('POST', $this->exchangeurl . '/webservice/upload.php', [
+            'multipart' => [
+                [
+                    'name' => 'token',
+                    'contents' => $token,
+                ],
+                [
+                    'name' => 'file_1',
+                    'contents' => fopen($filepath, 'rb'),
+                    'filename' => $filename,
+                ],
+            ],
+        ]));
         $decoded = json_decode((string) $response->getBody(), true);
         if (empty($decoded[0]['itemid'])) {
             throw new \moodle_exception('exchangeerror', 'local_oerclient', '', $decoded['error'] ?? 'upload failed');

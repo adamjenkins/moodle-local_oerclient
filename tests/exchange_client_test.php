@@ -1,0 +1,116 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+namespace local_oerclient\local;
+
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Exception\RequestException;
+
+defined('MOODLE_INTERNAL') || die();
+
+/**
+ * Tests for exchange_client — specifically that a failed HTTP request never
+ * leaks a live credential into the resulting exception message. Found on
+ * the third MDL Shield audit pass (2026-07-18): Guzzle's default
+ * RequestException::getMessage() embeds the full request URI, and
+ * upload_file() used to pass the personal WS token as a query parameter —
+ * a failed upload would write the teacher's live token into
+ * local_oerclient_shares.errormessage, a field displayed back to the user.
+ *
+ * @package    local_oerclient
+ * @copyright  2026 Adam Jenkins <adam@wisecat.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \local_oerclient\local\exchange_client
+ */
+final class exchange_client_test extends \advanced_testcase {
+    public function test_a_failed_upload_does_not_leak_the_token_in_the_exception_message(): void {
+        $this->resetAfterTest();
+
+        $secrettoken = 'super-secret-token-must-not-leak';
+
+        // Simulate exactly what a real failure looks like: Guzzle's
+        // RequestException::create() embeds the request URI (and, before the
+        // fix, the URI carried ?token=<secret>) into getMessage().
+        $failingrequest = new Request('POST', 'https://exchange.example/webservice/upload.php?token=' . $secrettoken);
+        $mock = new MockHandler([
+            RequestException::create($failingrequest, new Response(403, [], 'forbidden')),
+        ]);
+        $handlerstack = HandlerStack::create($mock);
+
+        $client = new class ($handlerstack) extends exchange_client {
+            private \GuzzleHttp\HandlerStack $handlerstack;
+
+            public function __construct(\GuzzleHttp\HandlerStack $handlerstack) {
+                parent::__construct('https://exchange.example');
+                $this->handlerstack = $handlerstack;
+            }
+
+            protected function client(): \core\http_client {
+                return new \core\http_client(['handler' => $this->handlerstack]);
+            }
+        };
+
+        $tmpfile = make_request_directory() . '/fake.mbz';
+        file_put_contents($tmpfile, 'x');
+
+        try {
+            $client->upload_file($secrettoken, $tmpfile, 'fake.mbz');
+            $this->fail('Expected a moodle_exception to be thrown.');
+        } catch (\moodle_exception $e) {
+            $this->assertStringNotContainsString($secrettoken, $e->getMessage());
+            $this->assertStringNotContainsString($secrettoken, (string) $e);
+        }
+    }
+
+    public function test_upload_file_sends_the_token_in_the_body_not_the_uri(): void {
+        $this->resetAfterTest();
+
+        $capturedrequest = null;
+        $mock = new MockHandler([
+            function (Request $request) use (&$capturedrequest) {
+                $capturedrequest = $request;
+                return new Response(200, [], json_encode([['itemid' => 123]]));
+            },
+        ]);
+        $handlerstack = HandlerStack::create($mock);
+
+        $client = new class ($handlerstack) extends exchange_client {
+            private \GuzzleHttp\HandlerStack $handlerstack;
+
+            public function __construct(\GuzzleHttp\HandlerStack $handlerstack) {
+                parent::__construct('https://exchange.example');
+                $this->handlerstack = $handlerstack;
+            }
+
+            protected function client(): \core\http_client {
+                return new \core\http_client(['handler' => $this->handlerstack]);
+            }
+        };
+
+        $tmpfile = make_request_directory() . '/fake.mbz';
+        file_put_contents($tmpfile, 'x');
+
+        $itemid = $client->upload_file('a-real-token', $tmpfile, 'fake.mbz');
+
+        $this->assertSame(123, $itemid);
+        $this->assertNotNull($capturedrequest);
+        $this->assertStringNotContainsString('a-real-token', (string) $capturedrequest->getUri());
+        $this->assertStringContainsString('a-real-token', (string) $capturedrequest->getBody());
+    }
+}
