@@ -157,6 +157,54 @@ final class share_upload_task_test extends \advanced_testcase {
      * only ever worked for admins. This test proves an editingteacher-only
      * user can now run a full backup without hitting that exception.
      */
+    /**
+     * The task builds the sanitized .mbz into a per-share temp dir before
+     * uploading it. If the upload/publish then fails, that (potentially large)
+     * backup file used to be left on disk until core's week-old temp cleanup
+     * swept it — a run of failing shares could pile .mbz files up. execute()
+     * must now remove the per-share temp dir on the failure path, not only on
+     * success.
+     */
+    public function test_execute_cleans_up_the_backup_temp_dir_when_the_upload_fails(): void {
+        global $DB, $CFG;
+        $this->resetAfterTest();
+
+        // A well-formed but dead Exchange URL: the upload connect fails fast
+        // (ConnectException -> exchangeerror), driving execute() down its
+        // catch/finally path after run_backup() has already produced the .mbz.
+        set_config('exchangeurl', 'http://127.0.0.1:9', 'local_oerclient');
+        set_config('siteid', 1, 'local_oerclient');
+
+        $course = $this->getDataGenerator()->create_course();
+        $user = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, 'editingteacher');
+
+        // A link row so execute() gets past the not-linked guard and reaches
+        // the backup + upload stages.
+        $DB->insert_record('local_oerclient_link', (object) [
+            'userid' => $user->id, 'exchangeuserid' => 1, 'token' => 'dummytoken', 'timecreated' => time(),
+        ]);
+
+        $shareid = $DB->insert_record('local_oerclient_shares', (object) [
+            'userid' => $user->id, 'courseid' => $course->id, 'cmid' => null, 'type' => 'course',
+            'title' => 't', 'summary' => '', 'language' => '', 'tags' => '',
+            'licenseshortname' => 'cc-4.0', 'activitytype' => null, 'status' => 'pending',
+            'exchangeresourceid' => null, 'errormessage' => null,
+            'timecreated' => time(), 'timemodified' => time(),
+        ]);
+
+        $task = new share_upload_task();
+        $task->set_custom_data(['shareid' => $shareid]);
+        $task->execute();
+
+        $share = $DB->get_record('local_oerclient_shares', ['id' => $shareid], '*', MUST_EXIST);
+        $this->assertSame('failed', $share->status);
+        $this->assertDirectoryDoesNotExist(
+            $CFG->tempdir . '/oerclient/share_' . $shareid,
+            'the per-share backup temp dir must be removed even when the upload fails'
+        );
+    }
+
     public function test_run_backup_succeeds_for_a_teacher_without_backup_userinfo_capability(): void {
         global $CFG;
         $this->resetAfterTest();

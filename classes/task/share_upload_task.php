@@ -43,6 +43,7 @@ class share_upload_task extends \core\task\adhoc_task {
             return;
         }
 
+        $tmppath = null;
         try {
             // The synchronous share.php request checked local/oerclient:share at
             // submission time, but this task can run well after that (queued
@@ -95,8 +96,6 @@ class share_upload_task extends \core\task\adhoc_task {
                 'errormessage' => null,
                 'timemodified' => time(),
             ]);
-
-            @unlink($tmppath);
         } catch (\Throwable $e) {
             $DB->update_record('local_oerclient_shares', (object) [
                 'id' => $shareid,
@@ -104,6 +103,19 @@ class share_upload_task extends \core\task\adhoc_task {
                 'errormessage' => $e->getMessage(),
                 'timemodified' => time(),
             ]);
+        } finally {
+            // The run_backup() step writes the .mbz into a per-share temp dir.
+            // On the failure path (upload/publish threw) neither the (potentially
+            // large) backup file nor its dir was being removed — they only got
+            // swept by core's week-old temp-file cleanup task. Remove the whole
+            // per-share dir on every exit path so a run of failing shares can't
+            // pile .mbz files up on disk.
+            if ($tmppath !== null) {
+                $tmpdir = dirname($tmppath);
+                if (is_dir($tmpdir)) {
+                    fulldelete($tmpdir);
+                }
+            }
         }
     }
 

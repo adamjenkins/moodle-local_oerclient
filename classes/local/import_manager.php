@@ -68,42 +68,56 @@ class import_manager {
 
         $tmppath = self::download($resource['downloadurl']);
 
-        // Track a course we create for this import (course-type only) so a
-        // restore that fails *after* the course exists doesn't leave an empty
-        // orphan course behind — see restore_into()'s cleanup.
-        $createdcourseid = null;
-        if ($resource['type'] === 'activity') {
-            if (!$targetcourseid) {
-                @unlink($tmppath);
-                throw new \moodle_exception('error_targetcourserequired', 'local_oerclient');
+        // The restore_into() helper cleans up on a *restore-stage* failure,
+        // but the downloaded .mbz and its temp dir also have to be removed if we
+        // never reach the restore at all — e.g. create_course() throwing on a
+        // shortname collision when two users import the same resource
+        // concurrently (unique_shortname() is a check-then-create with a race
+        // window), or the activity-target guard below. A finally guarantees
+        // cleanup on every exit path; restore_into() unlinking the same file
+        // first is harmless (fulldelete of an already-emptied dir).
+        try {
+            // Track a course we create for this import (course-type only) so a
+            // restore that fails *after* the course exists doesn't leave an empty
+            // orphan course behind — see restore_into()'s cleanup.
+            $createdcourseid = null;
+            if ($resource['type'] === 'activity') {
+                if (!$targetcourseid) {
+                    throw new \moodle_exception('error_targetcourserequired', 'local_oerclient');
+                }
+                $courseid = $targetcourseid;
+            } else {
+                $category = \core_course_category::get_default();
+                $newcourse = create_course((object) [
+                    'fullname' => $resource['title'],
+                    'shortname' => self::unique_shortname($resource['title']),
+                    'category' => $category->id,
+                    'visible' => 0, // Hidden until the teacher reviews the localization checklist.
+                ]);
+                $courseid = $newcourse->id;
+                $createdcourseid = (int) $newcourse->id;
             }
-            $courseid = $targetcourseid;
-        } else {
-            $category = \core_course_category::get_default();
-            $newcourse = create_course((object) [
-                'fullname' => $resource['title'],
-                'shortname' => self::unique_shortname($resource['title']),
-                'category' => $category->id,
-                'visible' => 0, // Hidden until the teacher reviews the localization checklist.
+
+            self::restore_into($tmppath, (int) $courseid, $resource['type'], $userid, $createdcourseid);
+
+            $DB->insert_record('local_oerclient_imports', (object) [
+                'userid' => $userid,
+                'exchangeresourceid' => $resource['id'],
+                'exchangeversionid' => $resource['versionid'],
+                'courseid' => $courseid,
+                'timecreated' => time(),
             ]);
-            $courseid = $newcourse->id;
-            $createdcourseid = (int) $newcourse->id;
+
+            return [
+                'courseid' => $courseid,
+                'checklist' => self::localization_checklist($resource),
+            ];
+        } finally {
+            $tmpdir = dirname($tmppath);
+            if (is_dir($tmpdir)) {
+                fulldelete($tmpdir);
+            }
         }
-
-        self::restore_into($tmppath, (int) $courseid, $resource['type'], $userid, $createdcourseid);
-
-        $DB->insert_record('local_oerclient_imports', (object) [
-            'userid' => $userid,
-            'exchangeresourceid' => $resource['id'],
-            'exchangeversionid' => $resource['versionid'],
-            'courseid' => $courseid,
-            'timecreated' => time(),
-        ]);
-
-        return [
-            'courseid' => $courseid,
-            'checklist' => self::localization_checklist($resource),
-        ];
     }
 
     /**
