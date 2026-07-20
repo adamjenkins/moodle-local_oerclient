@@ -48,7 +48,7 @@ $PAGE->set_heading($resource['title']);
 
 global $DB, $USER;
 
-if (data_submitted() && confirm_sesskey() && optional_param('doimport', 0, PARAM_INT)) {
+if ($resource['type'] !== 'data' && data_submitted() && confirm_sesskey() && optional_param('doimport', 0, PARAM_INT)) {
     $targetcourseid = optional_param('targetcourseid', 0, PARAM_INT);
 
     import_manager::require_import_capability($resource['type'], $targetcourseid ?: null);
@@ -124,33 +124,41 @@ if ($structure && !empty($structure['sections'])) {
     echo html_writer::end_tag('ul');
 }
 
-echo $OUTPUT->heading(get_string('importheading', 'local_oerclient'), 4);
-echo html_writer::start_tag('form', [
-    'method' => 'post',
-    'action' => new moodle_url('/local/oerclient/resource_preview.php', ['id' => $id]),
-]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'doimport', 'value' => 1]);
+if ($resource['type'] === 'data') {
+    echo html_writer::link(
+        $resource['downloadurl'],
+        get_string('downloadbutton', 'local_oerclient'),
+        ['class' => 'btn btn-success']
+    );
+} else {
+    echo $OUTPUT->heading(get_string('importheading', 'local_oerclient'), 4);
+    echo html_writer::start_tag('form', [
+        'method' => 'post',
+        'action' => new moodle_url('/local/oerclient/resource_preview.php', ['id' => $id]),
+    ]);
+    echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
+    echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'doimport', 'value' => 1]);
 
-if ($resource['type'] === 'activity') {
-    $courses = enrol_get_users_courses($USER->id, true, null, 'fullname');
-    $options = [];
-    foreach ($courses as $c) {
-        if (has_capability('local/oerclient:import', context_course::instance($c->id))) {
-            $options[$c->id] = $c->fullname;
+    if ($resource['type'] === 'activity') {
+        $courses = enrol_get_users_courses($USER->id, true, null, 'fullname');
+        $options = [];
+        foreach ($courses as $c) {
+            if (has_capability('local/oerclient:import', context_course::instance($c->id))) {
+                $options[$c->id] = $c->fullname;
+            }
+        }
+        if (empty($options)) {
+            echo html_writer::tag('p', get_string('error_notargetcourses', 'local_oerclient'));
+        } else {
+            echo html_writer::tag('label', get_string('importtargetcourse', 'local_oerclient'));
+            echo html_writer::select($options, 'targetcourseid', '', false, ['class' => 'form-select mb-2']);
         }
     }
-    if (empty($options)) {
-        echo html_writer::tag('p', get_string('error_notargetcourses', 'local_oerclient'));
-    } else {
-        echo html_writer::tag('label', get_string('importtargetcourse', 'local_oerclient'));
-        echo html_writer::select($options, 'targetcourseid', '', false, ['class' => 'form-select mb-2']);
-    }
-}
 
-echo html_writer::empty_tag('input', [
-    'type' => 'submit', 'value' => get_string('importbutton', 'local_oerclient'), 'class' => 'btn btn-success',
-]);
-echo html_writer::end_tag('form');
+    echo html_writer::empty_tag('input', [
+        'type' => 'submit', 'value' => get_string('importbutton', 'local_oerclient'), 'class' => 'btn btn-success',
+    ]);
+    echo html_writer::end_tag('form');
+}
 
 echo $OUTPUT->footer();
