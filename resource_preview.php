@@ -73,6 +73,13 @@ if (data_submitted() && confirm_sesskey() && optional_param('doimport', 0, PARAM
 
 echo $OUTPUT->header();
 
+if (!empty($resource['creatorname'])) {
+    $creatorlabel = s($resource['creatorname']);
+    if (!empty($resource['creatorprofileurl'])) {
+        $creatorlabel = html_writer::link($resource['creatorprofileurl'], $creatorlabel);
+    }
+    echo html_writer::tag('p', get_string('createdby', 'local_oerclient', $creatorlabel));
+}
 echo html_writer::tag('p', get_string('licenselabel', 'local_oerclient', s($resource['licenseshortname'])));
 echo html_writer::tag('div', format_text($resource['summary'] ?? '', FORMAT_PLAIN), ['class' => 'mb-3']);
 

@@ -31,6 +31,7 @@ $string['checklist_names'] = 'Any names, institutions, or contact details mentio
 $string['checklist_visibility'] = 'The imported course is hidden by default — review it, then make it visible to students.';
 $string['connectintro'] = 'Link your personal account on the Exchange to share and review resources as yourself.';
 $string['connectsuccess'] = 'Your account is now linked to the Exchange.';
+$string['createdby'] = 'Created by {$a}';
 $string['error_invalidlicense'] = 'Choose a license from the list provided.';
 $string['error_invalidlinkstate'] = 'This account-linking request could not be verified. Please try linking your account again.';
 $string['error_noexchangeurl'] = 'Set the Exchange URL in settings first.';
