@@ -95,6 +95,17 @@ if (empty($result['results'])) {
         echo html_writer::start_tag('div', ['class' => 'card h-100']);
         echo html_writer::start_tag('div', ['class' => 'card-body']);
         echo html_writer::tag('h5', html_writer::link($url, s($r['title'])), ['class' => 'card-title']);
+        if (!empty($r['creatorname'])) {
+            $creatorlabel = s($r['creatorname']);
+            if (!empty($r['creatorprofileurl'])) {
+                $creatorlabel = html_writer::link($r['creatorprofileurl'], $creatorlabel);
+            }
+            echo html_writer::tag(
+                'div',
+                get_string('createdby', 'local_oerclient', $creatorlabel),
+                ['class' => 'small text-muted']
+            );
+        }
         echo html_writer::tag('p', s(shorten_text(strip_tags($r['summary']), 140)), ['class' => 'card-text text-muted']);
         echo html_writer::tag('div', s($r['licenseshortname']), ['class' => 'small text-muted']);
         echo html_writer::end_tag('div');
