@@ -16,7 +16,9 @@ post-import localization checklist.
   Exchange token — see `local_oerexchange`'s README for the full handshake.
 - **Browse/import**: `browse.php` calls the Exchange's search API;
   `resource_preview.php` shows the structure preview and required-plugin
-  disclosure before importing via `restore_controller`.
+  disclosure before importing via `restore_controller`. Data resources
+  (`type = 'data'` — glossaries, question banks, and other generic files) show
+  a **Download** button instead of the import form.
 
 ## Configuration
 
