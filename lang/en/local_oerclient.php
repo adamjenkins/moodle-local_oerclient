@@ -112,4 +112,5 @@ $string['sitecontact'] = 'Contact email';
 $string['structurepreview'] = 'Structure preview';
 $string['typeactivity'] = 'Activity';
 $string['typecourse'] = 'Course';
+$string['typedata'] = 'Data resource';
 $string['viewonexchange'] = 'View on the Exchange';

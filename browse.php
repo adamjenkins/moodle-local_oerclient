@@ -63,6 +63,7 @@ echo html_writer::select(
         '' => '',
         'course' => get_string('typecourse', 'local_oerclient'),
         'activity' => get_string('typeactivity', 'local_oerclient'),
+        'data' => get_string('typedata', 'local_oerclient'),
     ],
     'type',
     $type,
