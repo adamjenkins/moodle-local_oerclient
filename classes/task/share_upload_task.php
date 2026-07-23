@@ -33,6 +33,9 @@ class share_upload_task extends \core\task\adhoc_task {
         global $DB, $CFG;
 
         require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
+        // The cleanup below calls fulldelete(), which lives here, and filelib
+        // is not loaded on every request — see import_manager::import()'s note.
+        require_once($CFG->libdir . '/filelib.php');
 
         $data = $this->get_custom_data();
         $shareid = (int) $data->shareid;

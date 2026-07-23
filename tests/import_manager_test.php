@@ -168,4 +168,100 @@ final class import_manager_test extends \advanced_testcase {
             'a pre-existing target course must survive a failed activity import'
         );
     }
+
+    /**
+     * Packages a real course as a .mbz the way share_upload_task does, and
+     * returns the path to it.
+     *
+     * @param \stdClass $course course to back up
+     * @param int $userid user the backup runs as
+     * @return string path to the .mbz
+     */
+    protected function make_backup(\stdClass $course, int $userid): string {
+        global $CFG;
+        require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
+
+        $bc = new \backup_controller(
+            \backup::TYPE_1COURSE,
+            $course->id,
+            \backup::FORMAT_MOODLE,
+            \backup::INTERACTIVE_NO,
+            \backup::MODE_GENERAL,
+            $userid
+        );
+        $bc->get_plan()->get_setting('users')->set_value(false);
+        $bc->execute_plan();
+        $result = $bc->get_results();
+        $file = $result['backup_destination'];
+
+        $tmpdir = make_temp_directory('oerclient/testbackup_' . random_string(4));
+        $tmppath = $tmpdir . '/import.mbz';
+        $file->copy_content_to($tmppath);
+        $bc->destroy();
+
+        return $tmppath;
+    }
+
+    /**
+     * The safety promise the post-import checklist makes to the teacher —
+     * "the imported course is hidden by default, review it then make it
+     * visible" — has to survive the restore.
+     *
+     * It did not: a course restore writes the backup's own course settings
+     * over the new course's, so import()'s create_course(['visible' => 0])
+     * was undone and every course-type import landed visible to students.
+     * This asserts the end state, not the intermediate one, precisely
+     * because the intermediate one was the thing that lied.
+     */
+    public function test_a_course_created_by_an_import_ends_up_hidden(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        // The source course is visible — that is what gets baked into the
+        // backup, and what used to leak through onto the imported copy.
+        $source = $this->getDataGenerator()->create_course(['visible' => 1]);
+        $this->getDataGenerator()->create_module('page', ['course' => $source->id]);
+        $tmppath = $this->make_backup($source, get_admin()->id);
+
+        // Stand in for the course import() creates just before restoring.
+        $created = $this->getDataGenerator()->create_course(['visible' => 0]);
+
+        $method = new \ReflectionMethod(import_manager::class, 'restore_into');
+        $method->setAccessible(true);
+        $method->invoke(null, $tmppath, (int) $created->id, 'course', get_admin()->id, (int) $created->id);
+
+        $this->assertSame(
+            '0',
+            (string) $DB->get_field('course', 'visible', ['id' => $created->id]),
+            'a course created by an import must not be visible to students until reviewed'
+        );
+    }
+
+    /**
+     * The counterpart: importing an activity into a course the teacher
+     * already had must never hide that course behind their back.
+     */
+    public function test_an_activity_import_leaves_the_target_courses_visibility_alone(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $source = $this->getDataGenerator()->create_course(['visible' => 1]);
+        $this->getDataGenerator()->create_module('page', ['course' => $source->id]);
+        $tmppath = $this->make_backup($source, get_admin()->id);
+
+        $target = $this->getDataGenerator()->create_course(['visible' => 1]);
+
+        $method = new \ReflectionMethod(import_manager::class, 'restore_into');
+        $method->setAccessible(true);
+        // A null createdcourseid means this import did not create the target.
+        $method->invoke(null, $tmppath, (int) $target->id, 'activity', get_admin()->id, null);
+
+        $this->assertSame(
+            '1',
+            (string) $DB->get_field('course', 'visible', ['id' => $target->id]),
+            'importing into an existing course must not change its visibility'
+        );
+    }
 }

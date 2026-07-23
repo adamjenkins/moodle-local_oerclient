@@ -64,7 +64,17 @@ class import_manager {
      * @return array {courseid, checklist} — checklist is a list of localization hints
      */
     public static function import(array $resource, int $userid, ?int $targetcourseid = null): array {
-        global $DB;
+        global $CFG, $DB;
+
+        // Neither of these is loaded on every request, and both are reached on
+        // ordinary paths through this method: create_course() below for a
+        // course-type import, fulldelete() in the finally for every import.
+        // Without them a course-type import died with "Call to undefined
+        // function local_oerclient\local\create_course()" — and then the
+        // finally's fulldelete() died the same way, replacing the real error
+        // with a second, more confusing one before it could surface.
+        require_once($CFG->dirroot . '/course/lib.php');
+        require_once($CFG->libdir . '/filelib.php');
 
         $tmppath = self::download($resource['downloadurl']);
 
@@ -144,6 +154,10 @@ class import_manager {
         global $CFG;
 
         require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
+        // Both delete_course() on the failure path and course_change_visibility()
+        // on the success path live here; see import()'s note on why this cannot
+        // be left to whatever happens to be loaded already.
+        require_once($CFG->dirroot . '/course/lib.php');
 
         try {
             // The \restore_controller class takes the name of an already-extracted backup
@@ -171,6 +185,20 @@ class import_manager {
 
             $rc->execute_plan();
             $rc->destroy();
+
+            // A course restore writes the backup's own course settings over the
+            // ones the new course was created with — visibility included. So
+            // create_course()'s 'visible' => 0 in import() was silently undone
+            // here, and every course-type import landed VISIBLE: content pulled
+            // in from another site went live to students before anyone had
+            // reviewed it, while the post-import checklist told the teacher the
+            // opposite ("hidden by default — review it, then make it visible").
+            // Re-asserted after the restore, where nothing else overwrites it,
+            // and only for a course this import created — never for a
+            // pre-existing course the user chose to import an activity into.
+            if ($createdcourseid) {
+                course_change_visibility($createdcourseid, false);
+            }
         } catch (\Throwable $e) {
             if ($createdcourseid) {
                 delete_course($createdcourseid, false);
