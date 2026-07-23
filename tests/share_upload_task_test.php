@@ -16,6 +16,8 @@
 
 namespace local_oerclient\task;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+
 /**
  * Tests for share_upload_task::find_existing_resource_id(). Found live,
  * 2026-07-19: re-sharing an already-shared course produced a second,
@@ -27,8 +29,8 @@ namespace local_oerclient\task;
  * @package    local_oerclient
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \local_oerclient\task\share_upload_task
  */
+#[CoversClass(share_upload_task::class)]
 final class share_upload_task_test extends \advanced_testcase {
     /**
      * Invokes the protected find_existing_resource_id() via reflection.

@@ -109,6 +109,17 @@ if (empty($result['results'])) {
         }
         echo html_writer::tag('p', s(shorten_text(strip_tags($r['summary']), 140)), ['class' => 'card-text text-muted']);
         echo html_writer::tag('div', s($r['licenseshortname']), ['class' => 'small text-muted']);
+        // Link out to the canonical page on the Exchange, which carries the
+        // share buttons, reviews and author profile this preview does not.
+        echo html_writer::tag(
+            'div',
+            html_writer::link(
+                rtrim($exchangeurl, '/') . '/local/oerexchange/resource.php?id=' . (int) $r['id'],
+                get_string('viewonexchange', 'local_oerclient'),
+                ['class' => 'small', 'target' => '_blank', 'rel' => 'noopener noreferrer']
+            ),
+            ['class' => 'mt-1']
+        );
         echo html_writer::end_tag('div');
         echo html_writer::end_tag('div');
         echo html_writer::end_tag('div');

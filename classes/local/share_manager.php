@@ -51,4 +51,38 @@ class share_manager {
 
         return false;
     }
+
+    /**
+     * Whether the course (and, for an activity share, the activity) this share
+     * was made from still exists on this site.
+     *
+     * A published resource is deliberately independent of the course it came
+     * from — that is the point of publishing an OER — so a deleted source must
+     * never alter what is on the Exchange. It does mean "update the shared
+     * copy" has nothing to re-read, and without this check the attempt died
+     * deep inside context_course::instance() or backup_controller with an
+     * error meaningless to a teacher.
+     *
+     * @param \stdClass $share a row from local_oerclient_shares
+     * @return bool
+     */
+    public static function source_exists(\stdClass $share): bool {
+        global $DB;
+
+        if (!$DB->record_exists('course', ['id' => $share->courseid])) {
+            return false;
+        }
+
+        if ($share->type === 'activity' && !empty($share->cmid)) {
+            // Checking course_modules directly rather than via
+            // get_coursemodule_from_id(), which throws on a missing cm — the
+            // whole point here is to answer the question without an exception.
+            return $DB->record_exists('course_modules', [
+                'id' => $share->cmid,
+                'course' => $share->courseid,
+            ]);
+        }
+
+        return true;
+    }
 }

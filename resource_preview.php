@@ -41,7 +41,25 @@ if (empty($exchangeurl) || empty($sitetoken)) {
 }
 
 $client = new exchange_client($exchangeurl);
-$resource = $client->call('local_oerexchange_get_resource', ['resourceid' => $id], $sitetoken);
+try {
+    $resource = $client->call('local_oerexchange_get_resource', ['resourceid' => $id], $sitetoken);
+} catch (\Throwable $e) {
+    // The Exchange refuses anything not 'published', so this is what an author
+    // hiding or deleting a resource looks like from here. Say that plainly
+    // instead of surfacing the far side's raw exception text, which for this
+    // very common case is a bare "Not found.".
+    $PAGE->set_title(get_string('error_resourcegone', 'local_oerclient'));
+    $PAGE->set_heading(get_string('error_resourcegone', 'local_oerclient'));
+    echo $OUTPUT->header();
+    echo $OUTPUT->notification(get_string('error_resourcegone', 'local_oerclient'), 'info');
+    echo html_writer::link(
+        new moodle_url('/local/oerclient/browse.php'),
+        get_string('browseexchange', 'local_oerclient'),
+        ['class' => 'btn btn-primary']
+    );
+    echo $OUTPUT->footer();
+    exit;
+}
 
 $PAGE->set_title($resource['title']);
 $PAGE->set_heading($resource['title']);
@@ -123,6 +141,18 @@ if ($structure && !empty($structure['sections'])) {
     }
     echo html_writer::end_tag('ul');
 }
+
+// The canonical public page for this resource lives on the Exchange, and
+// until now nothing here linked to it — so there was no way to reach the
+// page that carries the share buttons, reviews and author profile.
+echo html_writer::tag(
+    'p',
+    html_writer::link(
+        rtrim($exchangeurl, '/') . '/local/oerexchange/resource.php?id=' . (int) $resource['id'],
+        get_string('viewonexchange', 'local_oerclient'),
+        ['class' => 'btn btn-outline-secondary btn-sm', 'target' => '_blank', 'rel' => 'noopener noreferrer']
+    )
+);
 
 if ($resource['type'] === 'data') {
     echo html_writer::link(

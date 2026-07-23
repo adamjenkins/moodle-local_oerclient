@@ -16,6 +16,7 @@
 
 namespace local_oerclient;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use core\hook\navigation\secondary_extend;
 use core\navigation\views\secondary;
 
@@ -35,8 +36,8 @@ use core\navigation\views\secondary;
  * @package    local_oerclient
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \local_oerclient\hook_listener
  */
+#[CoversClass(hook_listener::class)]
 final class hook_listener_test extends \advanced_testcase {
     public function test_adds_the_share_node_on_a_real_course_page_for_an_editing_teacher(): void {
         global $PAGE;

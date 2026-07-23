@@ -16,6 +16,7 @@
 
 namespace local_oerclient\local;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Request;
@@ -34,8 +35,8 @@ use GuzzleHttp\Exception\RequestException;
  * @package    local_oerclient
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \local_oerclient\local\exchange_client
  */
+#[CoversClass(exchange_client::class)]
 final class exchange_client_test extends \advanced_testcase {
     public function test_a_failed_upload_does_not_leak_the_token_in_the_exception_message(): void {
         $this->resetAfterTest();

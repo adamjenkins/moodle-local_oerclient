@@ -16,14 +16,16 @@
 
 namespace local_oerclient;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+
 /**
  * Tests for local_oerclient's event observers.
  *
  * @package    local_oerclient
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \local_oerclient\observer
  */
+#[CoversClass(observer::class)]
 final class observer_test extends \advanced_testcase {
     /**
      * Deleting a course must not leave local_oerclient_shares/_imports rows

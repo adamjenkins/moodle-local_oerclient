@@ -16,6 +16,7 @@
 
 namespace local_oerclient\privacy;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use core_privacy\local\request\approved_contextlist;
 use core_privacy\local\request\approved_userlist;
 use core_privacy\local\request\userlist;
@@ -29,8 +30,8 @@ use core_privacy\local\request\writer;
  * @package    local_oerclient
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \local_oerclient\privacy\provider
  */
+#[CoversClass(provider::class)]
 final class privacy_provider_test extends \core_privacy\tests\provider_testcase {
     public function test_get_metadata_declares_all_three_tables(): void {
         $collection = new \core_privacy\local\metadata\collection('local_oerclient');

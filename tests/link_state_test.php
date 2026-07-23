@@ -16,6 +16,8 @@
 
 namespace local_oerclient\local;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+
 /**
  * Tests for link_state — the account-linking CSRF/state-token guard added
  * for an MDL Shield audit finding (2026-07-18): connect_callback.php
@@ -26,8 +28,8 @@ namespace local_oerclient\local;
  * @package    local_oerclient
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \local_oerclient\local\link_state
  */
+#[CoversClass(link_state::class)]
 final class link_state_test extends \advanced_testcase {
     public function test_a_freshly_issued_state_verifies_once(): void {
         $this->resetAfterTest();

@@ -16,6 +16,8 @@
 
 namespace local_oerclient;
 
+use PHPUnit\Framework\Attributes\CoversFunction;
+
 /**
  * Tests for local_oerclient_extend_settings_navigation() (lib.php).
  *
@@ -36,8 +38,8 @@ namespace local_oerclient;
  * @package    local_oerclient
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     ::local_oerclient_extend_settings_navigation
  */
+#[CoversFunction('local_oerclient_extend_settings_navigation')]
 final class lib_test extends \advanced_testcase {
     public function test_adds_the_share_node_on_a_real_activity_page_for_an_editing_teacher(): void {
         global $PAGE;

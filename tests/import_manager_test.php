@@ -16,6 +16,7 @@
 
 namespace local_oerclient;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use local_oerclient\local\import_manager;
 
 /**
@@ -28,8 +29,8 @@ use local_oerclient\local\import_manager;
  * @package    local_oerclient
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \local_oerclient\local\import_manager
  */
+#[CoversClass(import_manager::class)]
 final class import_manager_test extends \advanced_testcase {
     public function test_activity_import_without_targetcourseid_throws_moodle_exception(): void {
         $this->resetAfterTest();

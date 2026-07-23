@@ -16,6 +16,8 @@
 
 namespace local_oerclient\local;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+
 /**
  * Tests for share_manager::is_valid_license() — the license re-validation
  * added for MDL Shield audit finding (2026-07-18): share.php's POST handler
@@ -25,8 +27,8 @@ namespace local_oerclient\local;
  * @package    local_oerclient
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \local_oerclient\local\share_manager
  */
+#[CoversClass(share_manager::class)]
 final class share_manager_test extends \advanced_testcase {
     public function test_a_real_core_license_shortname_is_valid(): void {
         $this->resetAfterTest();

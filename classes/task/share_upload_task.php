@@ -53,6 +53,18 @@ class share_upload_task extends \core\task\adhoc_task {
             // course/activity backup still go out to the Exchange (MDL Shield
             // audit finding, 2026-07-18: async sinks must re-check capabilities,
             // not just trust that the synchronous request-time check still holds).
+            // The course/activity can be deleted between queueing this task
+            // and cron picking it up. Checking first turns a meaningless core
+            // exception from context_course::instance() or backup_controller
+            // into an error message a teacher can act on. share_status.php
+            // makes the same check before offering the Update button.
+            if (!\local_oerclient\local\share_manager::source_exists($share)) {
+                throw new \moodle_exception(
+                    $share->type === 'activity' ? 'error_sourcegoneactivity' : 'error_sourcegone',
+                    'local_oerclient'
+                );
+            }
+
             $sharecontext = \context_course::instance($share->courseid);
             if (!has_capability('local/oerclient:share', $sharecontext, $share->userid)) {
                 throw new \moodle_exception('error_sharecapabilitylost', 'local_oerclient');

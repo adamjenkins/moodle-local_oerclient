@@ -47,6 +47,15 @@ $PAGE->set_heading(get_string('sharestatustitle', 'local_oerclient'));
 if (optional_param('update', 0, PARAM_INT) && confirm_sesskey()) {
     require_capability('local/oerclient:share', context_course::instance($share->courseid));
 
+    if (!\local_oerclient\local\share_manager::source_exists($share)) {
+        redirect(
+            new moodle_url('/local/oerclient/share_status.php', ['id' => $id]),
+            get_string('error_sourcegone', 'local_oerclient'),
+            null,
+            \core\output\notification::NOTIFY_WARNING
+        );
+    }
+
     $DB->update_record('local_oerclient_shares', (object) [
         'id' => $share->id,
         'status' => 'pending',
@@ -136,16 +145,25 @@ if ($share->status === 'published' && $share->exchangeresourceid) {
         ['class' => 'btn btn-primary me-2', 'target' => '_blank']
     );
     if (has_capability('local/oerclient:share', context_course::instance($share->courseid))) {
-        echo html_writer::link(
-            new moodle_url('/local/oerclient/share_status.php', [
-                'id' => $id, 'update' => 1, 'sesskey' => sesskey(),
-            ]),
-            get_string('updateexchangecopy', 'local_oerclient'),
-            ['class' => 'btn btn-outline-primary']
-        );
-        echo html_writer::tag('div', get_string('updateexchangecopyhint', 'local_oerclient'), [
-            'class' => 'small text-muted mt-1',
-        ]);
+        if (\local_oerclient\local\share_manager::source_exists($share)) {
+            echo html_writer::link(
+                new moodle_url('/local/oerclient/share_status.php', [
+                    'id' => $id, 'update' => 1, 'sesskey' => sesskey(),
+                ]),
+                get_string('updateexchangecopy', 'local_oerclient'),
+                ['class' => 'btn btn-outline-primary']
+            );
+            echo html_writer::tag('div', get_string('updateexchangecopyhint', 'local_oerclient'), [
+                'class' => 'small text-muted mt-1',
+            ]);
+        } else {
+            // No Update button at all rather than one that always fails. The
+            // published copy is untouched and stays exactly as it is.
+            echo $OUTPUT->notification(
+                get_string($share->type === 'activity' ? 'error_sourcegoneactivity' : 'error_sourcegone', 'local_oerclient'),
+                'warning'
+            );
+        }
     }
     echo html_writer::end_tag('div');
 }
