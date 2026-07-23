@@ -3,6 +3,23 @@
 All notable changes to this project are documented in this file, in
 [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [0.1.2] - 2026-07-23
+
+### Fixed
+
+- **Every course-type import failed.** `import_manager::import()` called
+  `create_course()` and `fulldelete()` without requiring `course/lib.php` and
+  `lib/filelib.php`. PHPUnit's bootstrap loads all of core, so both were
+  always defined under test and never in a real request; the `fulldelete()`
+  failure inside the `finally` then masked the original error.
+- **Imported courses landed visible to students**, despite being created with
+  `visible => 0` and a post-import checklist promising otherwise — a course
+  restore writes the backup's own course settings over the target's.
+  Visibility is re-asserted after the restore, guarded to courses the import
+  itself created, so importing an activity into a pre-existing course never
+  alters that course's visibility. The regression test asserts the state
+  after `restore_into()`, since the state before it was the misleading one.
+
 ## [0.1.1] - 2026-07-23
 
 ### Added

@@ -18,7 +18,16 @@ post-import localization checklist.
   `resource_preview.php` shows the structure preview and required-plugin
   disclosure before importing via `restore_controller`. Data resources
   (`type = 'data'` — glossaries, question banks, and other generic files) show
-  a **Download** button instead of the import form.
+  a **Download** button instead of the import form. A course created by an
+  import is **hidden from students** until you have reviewed it and made it
+  visible; importing an activity into a course you already had never changes
+  that course's visibility.
+- **Share status**: the share status page reports what the Exchange actually
+  holds for each of your shares — status, first published, last updated,
+  visible or hidden, downloads and imports — and offers **Update the shared
+  copy**, which re-uploads the course as it stands now and replaces the
+  published file without creating a duplicate catalogue entry. A share whose
+  source course or activity has since been deleted says so instead.
 
 ## Configuration
 

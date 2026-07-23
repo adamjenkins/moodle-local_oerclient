@@ -25,8 +25,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_oerclient';
-$plugin->version   = 2026072301;
+$plugin->version   = 2026072302;
 $plugin->requires  = 2024100700; // Moodle 5.0 — this plugin uses the 4.4+ Hooks API.
 $plugin->supported = [500, 502];
-$plugin->release   = '0.1.1';
+$plugin->release   = '0.1.2';
 $plugin->maturity  = MATURITY_ALPHA;
