@@ -144,20 +144,6 @@ final class share_upload_task_test extends \advanced_testcase {
     }
 
     /**
-     * MDL Shield audit finding (2026-07-18, found live while verifying the
-     * capability-recheck fix above): run_backup() used to call
-     * $bc->get_plan()->get_setting('users')->set_value(false) unconditionally.
-     * backup_controller's own constructor already runs check_security(),
-     * which locks that setting to false (LOCKED_BY_PERMISSION) for any user
-     * lacking moodle/backup:userinfo — which editingteacher does NOT have by
-     * default in stock Moodle, only manager/admin do. Core's
-     * base_setting::set_value() throws on ANY set_value() call once locked,
-     * even to the value it's already at, so the plugin's own redundant call
-     * broke sharing for its actual target audience (ordinary teachers) and
-     * only ever worked for admins. This test proves an editingteacher-only
-     * user can now run a full backup without hitting that exception.
-     */
-    /**
      * The task builds the sanitized .mbz into a per-share temp dir before
      * uploading it. If the upload/publish then fails, that (potentially large)
      * backup file used to be left on disk until core's week-old temp cleanup
@@ -205,6 +191,20 @@ final class share_upload_task_test extends \advanced_testcase {
         );
     }
 
+    /**
+     * MDL Shield audit finding (2026-07-18, found live while verifying the
+     * capability-recheck fix above): run_backup() used to call
+     * $bc->get_plan()->get_setting('users')->set_value(false) unconditionally.
+     * backup_controller's own constructor already runs check_security(),
+     * which locks that setting to false (LOCKED_BY_PERMISSION) for any user
+     * lacking moodle/backup:userinfo — which editingteacher does NOT have by
+     * default in stock Moodle, only manager/admin do. Core's
+     * base_setting::set_value() throws on ANY set_value() call once locked,
+     * even to the value it's already at, so the plugin's own redundant call
+     * broke sharing for its actual target audience (ordinary teachers) and
+     * only ever worked for admins. This test proves an editingteacher-only
+     * user can now run a full backup without hitting that exception.
+     */
     public function test_run_backup_succeeds_for_a_teacher_without_backup_userinfo_capability(): void {
         global $CFG;
         $this->resetAfterTest();
@@ -235,5 +235,45 @@ final class share_upload_task_test extends \advanced_testcase {
         $tmppath = $method->invoke($task, $share);
         $this->assertFileExists($tmppath);
         @unlink($tmppath);
+    }
+
+    /**
+     * The other side of the same coin: an admin can lock "Include enrolled
+     * users" ON in the site backup defaults (backup_general_users +
+     * _locked), which leaves the plan's users setting true AND
+     * LOCKED_BY_CONFIG for anyone who does hold moodle/backup:userinfo.
+     * Skipping the set_value() purely because the setting is locked would
+     * then publish a backup containing real user data to a public catalogue,
+     * silently. run_backup() must refuse the share instead.
+     */
+    public function test_run_backup_refuses_when_user_data_is_locked_on_by_site_config(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
+
+        set_config('backup_general_users', 1, 'backup');
+        set_config('backup_general_users_locked', 1, 'backup');
+
+        $course = $this->getDataGenerator()->create_course();
+        // An admin: holds moodle/backup:userinfo, so check_security() leaves
+        // the config lock (and its true value) in place rather than forcing
+        // the setting to false itself.
+        $this->setAdminUser();
+
+        $share = (object) [
+            'id' => 0,
+            'userid' => get_admin()->id,
+            'courseid' => $course->id,
+            'cmid' => null,
+            'type' => 'course',
+        ];
+
+        $task = new share_upload_task();
+        $method = new \ReflectionMethod(share_upload_task::class, 'run_backup');
+        $method->setAccessible(true);
+
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage(get_string('error_userdatalockedon', 'local_oerclient'));
+        $method->invoke($task, $share);
     }
 }

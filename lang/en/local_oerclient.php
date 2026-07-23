@@ -42,6 +42,7 @@ $string['error_notregistered'] = 'This site is not yet registered (or not yet ap
 $string['error_restoreprecheckfailed'] = 'The restore precheck failed for this backup.';
 $string['error_sharecapabilitylost'] = 'You no longer have permission to share this course or activity.';
 $string['error_targetcourserequired'] = 'A target course is required to import a single activity.';
+$string['error_userdatalockedon'] = 'This site\'s backup defaults force user data to be included in every backup, so nothing can be shared safely. Ask an administrator to unlock "Include enrolled users" under Site administration > Courses > Backups > General backup defaults.';
 $string['exchangeerror'] = 'Exchange error: {$a}';
 $string['filterbytype'] = 'Type';
 $string['generalsettings'] = 'General settings';

@@ -177,16 +177,29 @@ class share_upload_task extends \core\task\adhoc_task {
             );
         }
 
+        // Everything this plugin uploads must be free of user data, so the
+        // 'users' setting has to end up false whatever route we take here.
+        //
         // The backup_controller constructor already runs check_security,
         // which locks the users setting to false for any executing user
         // who lacks the backup:userinfo capability - ordinary teachers,
         // not just admins/managers. A locked setting throws on any further
         // set_value call, even to its current value, so unconditionally
         // forcing false here broke sharing for every teacher without that
-        // capability (found in the 2026-07-19 MDL Shield audit pass). Only
-        // force it when it is still ours to set.
+        // capability (found in the 2026-07-19 MDL Shield audit pass).
+        //
+        // Branch on the VALUE, not just the lock status: an admin can lock
+        // backup_general_users ON in the site backup defaults, which leaves
+        // the setting true AND LOCKED_BY_CONFIG for anyone who does hold
+        // backup:userinfo. Skipping the set_value on lock status alone would
+        // then silently publish a backup full of real user data to a public
+        // catalogue. Refuse the share instead - fail closed, never open.
         $userssetting = $bc->get_plan()->get_setting('users');
-        if ($userssetting->get_status() === \base_setting::NOT_LOCKED) {
+        if ($userssetting->get_value()) {
+            if ($userssetting->get_status() !== \base_setting::NOT_LOCKED) {
+                $bc->destroy();
+                throw new \moodle_exception('error_userdatalockedon', 'local_oerclient');
+            }
             $userssetting->set_value(false);
         }
         $bc->execute_plan();

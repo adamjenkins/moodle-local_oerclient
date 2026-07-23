@@ -40,6 +40,7 @@ $string['error_notregistered'] = 'このサイトはまだOER Exchangeに登録�
 $string['error_restoreprecheckfailed'] = 'このバックアップの復元事前チェックに失敗しました。';
 $string['error_sharecapabilitylost'] = 'このコースまたは活動を共有する権限がなくなりました。';
 $string['error_targetcourserequired'] = '単一の活動をインポートするには、対象コースの指定が必要です。';
+$string['error_userdatalockedon'] = 'このサイトのバックアップ既定値では、すべてのバックアップにユーザデータを含めることが強制されているため、安全に共有できるものがありません。サイト管理 > コース > バックアップ > 一般バックアップ既定値 で「登録利用者を含める」のロックを解除するよう管理者に依頼してください。';
 $string['exchangeerror'] = 'Exchangeエラー: {$a}';
 $string['filterbytype'] = '種別';
 $string['generalsettings'] = '全般設定';
