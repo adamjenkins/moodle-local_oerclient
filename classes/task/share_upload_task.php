@@ -136,6 +136,16 @@ class share_upload_task extends \core\task\adhoc_task {
     protected function find_existing_resource_id(\stdClass $share): int {
         global $DB;
 
+        // A share that has already been published to the Exchange knows its
+        // own catalogue entry. "Update the shared copy" re-runs this very
+        // share row (share_status.php sets it back to 'pending' and requeues
+        // the task), so the lookup below — which only matches *other* rows
+        // still marked 'published' — would find nothing and silently create a
+        // duplicate catalogue entry instead of updating this one.
+        if (!empty($share->exchangeresourceid)) {
+            return (int) $share->exchangeresourceid;
+        }
+
         $conditions = [
             'userid' => $share->userid,
             'courseid' => $share->courseid,
