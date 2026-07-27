@@ -111,25 +111,45 @@ echo html_writer::start_tag('form', [
 echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
 echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'dosubmit', 'value' => 1]);
 
-echo html_writer::tag('label', get_string('sharetitlelabel', 'local_oerclient'));
+echo html_writer::tag(
+    'label',
+    get_string('sharetitlelabel', 'local_oerclient'),
+    ['for' => 'oerclient-share-title']
+);
 echo html_writer::empty_tag('input', [
-    'type' => 'text', 'name' => 'title', 'class' => 'form-control mb-2',
-    'value' => $cmid ? get_coursemodule_from_id('', $cmid, $courseid)->name : $course->fullname,
+    'type' => 'text', 'name' => 'title', 'id' => 'oerclient-share-title', 'class' => 'form-control mb-2',
+    'value' => $cmid ? get_coursemodule_from_id('', $cmid, $courseid, false, MUST_EXIST)->name : $course->fullname,
     'required' => 'required',
 ]);
 
-echo html_writer::tag('label', get_string('sharesummarylabel', 'local_oerclient'));
-echo html_writer::tag('textarea', '', ['name' => 'summary', 'class' => 'form-control mb-2', 'required' => 'required']);
+echo html_writer::tag(
+    'label',
+    get_string('sharesummarylabel', 'local_oerclient'),
+    ['for' => 'oerclient-share-summary']
+);
+echo html_writer::tag(
+    'textarea',
+    '',
+    ['name' => 'summary', 'id' => 'oerclient-share-summary', 'class' => 'form-control mb-2',
+        'required' => 'required']
+);
 
-echo html_writer::tag('label', get_string('sharelanguagelabel', 'local_oerclient'));
+echo html_writer::tag(
+    'label',
+    get_string('sharelanguagelabel', 'local_oerclient'),
+    ['for' => 'oerclient-share-language']
+);
 echo html_writer::empty_tag('input', [
-    'type' => 'text', 'name' => 'language', 'class' => 'form-control mb-2', 'value' => current_language(),
+    'type' => 'text', 'name' => 'language', 'id' => 'oerclient-share-language',
+    'class' => 'form-control mb-2', 'value' => current_language(),
 ]);
 
-echo html_writer::tag('label', get_string('sharetagslabel', 'local_oerclient'));
-echo html_writer::empty_tag('input', ['type' => 'text', 'name' => 'tags', 'class' => 'form-control mb-2']);
+echo html_writer::tag('label', get_string('sharetagslabel', 'local_oerclient'), ['for' => 'oerclient-share-tags']);
+echo html_writer::empty_tag('input', [
+    'type' => 'text', 'name' => 'tags', 'id' => 'oerclient-share-tags', 'class' => 'form-control mb-2',
+]);
 
-echo html_writer::tag('label', get_string('sharelicenselabel', 'local_oerclient'));
+echo html_writer::tag('label', get_string('sharelicenselabel', 'local_oerclient'), ['for' => 'oerclient-share-license']);
 $licenseoptions = [];
 foreach ($licenses as $license) {
     $licenseoptions[$license->shortname] = $license->fullname;

@@ -27,6 +27,9 @@ use local_oerclient\local\import_manager;
 
 require(__DIR__ . '/../../config.php');
 require_login();
+if (isguestuser()) {
+    throw new moodle_exception('noguest');
+}
 
 $id = required_param('id', PARAM_INT);
 
@@ -93,8 +96,11 @@ echo $OUTPUT->header();
 
 if (!empty($resource['creatorname'])) {
     $creatorlabel = s($resource['creatorname']);
-    if (!empty($resource['creatorprofileurl'])) {
-        $creatorlabel = html_writer::link($resource['creatorprofileurl'], $creatorlabel);
+    // PARAM_URL rejects javascript:/data: schemes — html_writer only
+    // attribute-escapes, and this URL came from the Exchange.
+    $profileurl = clean_param((string) ($resource['creatorprofileurl'] ?? ''), PARAM_URL);
+    if ($profileurl !== '') {
+        $creatorlabel = html_writer::link($profileurl, $creatorlabel);
     }
     echo html_writer::tag('p', get_string('createdby', 'local_oerclient', $creatorlabel));
 }
@@ -155,11 +161,15 @@ echo html_writer::tag(
 );
 
 if ($resource['type'] === 'data') {
-    echo html_writer::link(
-        $resource['downloadurl'],
-        get_string('downloadbutton', 'local_oerclient'),
-        ['class' => 'btn btn-success']
-    );
+    // Same distrust as creatorprofileurl: the Exchange chose this URL.
+    $downloadurl = clean_param((string) ($resource['downloadurl'] ?? ''), PARAM_URL);
+    if ($downloadurl !== '') {
+        echo html_writer::link(
+            $downloadurl,
+            get_string('downloadbutton', 'local_oerclient'),
+            ['class' => 'btn btn-success']
+        );
+    }
 } else {
     echo $OUTPUT->heading(get_string('importheading', 'local_oerclient'), 4);
     echo html_writer::start_tag('form', [

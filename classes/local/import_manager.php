@@ -217,14 +217,35 @@ class import_manager {
      * @return string local temp path
      */
     protected static function download(string $url): string {
-        // See exchange_client's dev-harness note: self-signed certs + a
-        // private-network Exchange host in this environment.
-        $client = new \core\http_client(['verify' => false, 'ignoresecurity' => true]);
-        $response = $client->request('GET', $url);
+        // The download URL arrives inside the Exchange's own WS response,
+        // so a compromised Exchange (or a MITM) could point it anywhere —
+        // including internal-network hosts this server can reach but the
+        // remote can't. Only fetch from the origin the admin actually
+        // configured as the Exchange.
+        $expected = parse_url((string) get_config('local_oerclient', 'exchangeurl'));
+        $actual = parse_url($url);
+        if (
+            ($actual['scheme'] ?? '') !== ($expected['scheme'] ?? '')
+                || ($actual['host'] ?? '') !== ($expected['host'] ?? '')
+                || ($actual['port'] ?? null) !== ($expected['port'] ?? null)
+        ) {
+            throw new \moodle_exception(
+                'exchangeerror',
+                'local_oerclient',
+                '',
+                get_string('error_downloadorigin', 'local_oerclient')
+            );
+        }
 
         $tmpdir = make_temp_directory('oerclient/import_' . time() . '_' . random_string(4));
         $tmppath = $tmpdir . '/import.mbz';
-        file_put_contents($tmppath, (string) $response->getBody());
+
+        // Same transport policy as every other Exchange request (TLS
+        // verified unless the dev-only setting opts out), streamed straight
+        // to disk — a whole-course .mbz can be hundreds of MB and must not
+        // transit PHP memory.
+        $client = new \core\http_client(exchange_client::http_options());
+        $client->request('GET', $url, ['sink' => $tmppath]);
 
         return $tmppath;
     }

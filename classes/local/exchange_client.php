@@ -22,12 +22,13 @@ namespace local_oerclient\local;
  * bootstrap endpoints (register, link_consume). See DESIGN.md §1
  * "Transport: ride on core web services".
  *
- * Dev-harness note: both sites here use self-signed TLS certs and resolve to
- * a private-network IP, so TLS verification and core's curl SSRF guard
- * ('ignoresecurity', normally reserved for trusted admin-configured
- * endpoints — exactly what an Exchange URL an admin typed into settings is)
- * are both disabled below. A production deployment with real DNS/certs
- * should drop both once the Exchange is a real public host.
+ * Transport security: TLS verification and core's curl security guard are
+ * ON unless the admin explicitly enables the 'acceptinvalidcerts' setting
+ * (default off, clearly marked development-only). Earlier revisions shipped
+ * verify=false + ignoresecurity unconditionally for the self-signed dev
+ * harness — which meant every site and personal token travelled over
+ * unverified TLS on ANY production install, harvestable by a network MITM.
+ * The dev harness now opts in via the setting instead.
  *
  * @package    local_oerclient
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
@@ -63,12 +64,27 @@ class exchange_client {
      * @return \core\http_client
      */
     protected function client(): \core\http_client {
-        return new \core\http_client([
-            'verify' => false,
-            'ignoresecurity' => true,
+        return new \core\http_client(self::http_options());
+    }
+
+    /**
+     * The transport options every request to the Exchange uses — shared
+     * with import_manager::download() so there is exactly one place that
+     * decides whether the insecure dev-only mode is active.
+     *
+     * @return array Guzzle/core\http_client options
+     */
+    public static function http_options(): array {
+        // Default off: TLS verified, core's blocked-hosts/allowed-ports
+        // curl guard active. The setting exists for dev rigs with
+        // self-signed certs on private IPs and says so in its description.
+        $insecure = (bool) get_config('local_oerclient', 'acceptinvalidcerts');
+        return [
+            'verify' => !$insecure,
+            'ignoresecurity' => $insecure,
             'connect_timeout' => 3,
             'timeout' => 10,
-        ]);
+        ];
     }
 
     /**
@@ -87,7 +103,12 @@ class exchange_client {
         try {
             return $request();
         } catch (\GuzzleHttp\Exception\GuzzleException $e) {
-            throw new \moodle_exception('exchangeerror', 'local_oerclient', '', 'request to the Exchange failed');
+            throw new \moodle_exception(
+                'exchangeerror',
+                'local_oerclient',
+                '',
+                get_string('error_requestfailed', 'local_oerclient')
+            );
         }
     }
 
@@ -115,7 +136,9 @@ class exchange_client {
             throw new \moodle_exception('exchangeerror', 'local_oerclient', '', $decoded['message'] ?? $decoded['exception']);
         }
 
-        return $decoded ?? [];
+        // A bare JSON scalar (or invalid JSON) must not fatal the declared
+        // array return type.
+        return is_array($decoded) ? $decoded : [];
     }
 
     /**
@@ -133,7 +156,12 @@ class exchange_client {
         ]));
         $decoded = json_decode((string) $response->getBody(), true);
         if (empty($decoded['siteid'])) {
-            throw new \moodle_exception('exchangeerror', 'local_oerclient', '', $decoded['error'] ?? 'unknown error');
+            throw new \moodle_exception(
+                'exchangeerror',
+                'local_oerclient',
+                '',
+                $decoded['error'] ?? get_string('error_unknown', 'local_oerclient')
+            );
         }
         return (int) $decoded['siteid'];
     }
@@ -166,7 +194,12 @@ class exchange_client {
         ]));
         $decoded = json_decode((string) $response->getBody(), true);
         if (empty($decoded['token'])) {
-            throw new \moodle_exception('exchangeerror', 'local_oerclient', '', $decoded['error'] ?? 'unknown error');
+            throw new \moodle_exception(
+                'exchangeerror',
+                'local_oerclient',
+                '',
+                $decoded['error'] ?? get_string('error_unknown', 'local_oerclient')
+            );
         }
         return $decoded;
     }
@@ -201,7 +234,12 @@ class exchange_client {
         ]));
         $decoded = json_decode((string) $response->getBody(), true);
         if (empty($decoded[0]['itemid'])) {
-            throw new \moodle_exception('exchangeerror', 'local_oerclient', '', $decoded['error'] ?? 'upload failed');
+            throw new \moodle_exception(
+                'exchangeerror',
+                'local_oerclient',
+                '',
+                $decoded['error'] ?? get_string('error_uploadfailed', 'local_oerclient')
+            );
         }
         return (int) $decoded[0]['itemid'];
     }

@@ -219,23 +219,27 @@ class share_upload_task extends \core\task\adhoc_task {
         // backup:userinfo. Skipping the set_value on lock status alone would
         // then silently publish a backup full of real user data to a public
         // catalogue. Refuse the share instead - fail closed, never open.
-        $userssetting = $bc->get_plan()->get_setting('users');
-        if ($userssetting->get_value()) {
-            if ($userssetting->get_status() !== \base_setting::NOT_LOCKED) {
-                $bc->destroy();
-                throw new \moodle_exception('error_userdatalockedon', 'local_oerclient');
+        // The try/finally guarantees the controller (and its temp state) is
+        // destroyed on every exit path — including execute_plan() throwing,
+        // which previously leaked it.
+        try {
+            $userssetting = $bc->get_plan()->get_setting('users');
+            if ($userssetting->get_value()) {
+                if ($userssetting->get_status() !== \base_setting::NOT_LOCKED) {
+                    throw new \moodle_exception('error_userdatalockedon', 'local_oerclient');
+                }
+                $userssetting->set_value(false);
             }
-            $userssetting->set_value(false);
+            $bc->execute_plan();
+            $results = $bc->get_results();
+            $file = $results['backup_destination'];
+
+            $tmpdir = make_temp_directory('oerclient/share_' . $share->id);
+            $tmppath = $tmpdir . '/' . $file->get_filename();
+            $file->copy_content_to($tmppath);
+        } finally {
+            $bc->destroy();
         }
-        $bc->execute_plan();
-        $results = $bc->get_results();
-        $file = $results['backup_destination'];
-
-        $tmpdir = make_temp_directory('oerclient/share_' . $share->id);
-        $tmppath = $tmpdir . '/' . $file->get_filename();
-        $file->copy_content_to($tmppath);
-
-        $bc->destroy();
 
         return $tmppath;
     }
@@ -248,7 +252,10 @@ class share_upload_task extends \core\task\adhoc_task {
      */
     protected function set_status(int $shareid, string $status): void {
         global $DB;
-        $DB->set_field('local_oerclient_shares', 'status', $status, ['id' => $shareid]);
-        $DB->set_field('local_oerclient_shares', 'timemodified', time(), ['id' => $shareid]);
+        $DB->update_record('local_oerclient_shares', (object) [
+            'id' => $shareid,
+            'status' => $status,
+            'timemodified' => time(),
+        ]);
     }
 }

@@ -29,6 +29,45 @@
  * @return bool
  */
 function xmldb_local_oerclient_upgrade($oldversion) {
-    // No upgrade steps yet — initial release.
+    global $DB;
+    $dbman = $DB->get_manager();
+
+    if ($oldversion < 2026072700) {
+        // Foreign keys for the userid/courseid relations (documented in
+        // install.xml since 0.1.3) and the indexes they bring: the privacy
+        // provider queries every table by userid, and the course_deleted
+        // observer deletes shares/imports by courseid.
+        $table = new xmldb_table('local_oerclient_link');
+        $index = new xmldb_index('userid', XMLDB_INDEX_UNIQUE, ['userid']);
+        $key = new xmldb_key('userid', XMLDB_KEY_FOREIGN_UNIQUE, ['userid'], 'user', ['id']);
+        if ($dbman->index_exists($table, $index)) {
+            $dbman->drop_index($table, $index);
+        }
+        $dbman->add_key($table, $key);
+
+        $table = new xmldb_table('local_oerclient_shares');
+        $index = new xmldb_index('userid', XMLDB_INDEX_NOTUNIQUE, ['userid']);
+        if ($dbman->index_exists($table, $index)) {
+            $dbman->drop_index($table, $index);
+        }
+        $dbman->add_key($table, new xmldb_key('userid', XMLDB_KEY_FOREIGN, ['userid'], 'user', ['id']));
+        $index = new xmldb_index('courseid', XMLDB_INDEX_NOTUNIQUE, ['courseid']);
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_key($table, new xmldb_key('courseid', XMLDB_KEY_FOREIGN, ['courseid'], 'course', ['id']));
+        }
+
+        $table = new xmldb_table('local_oerclient_imports');
+        $index = new xmldb_index('userid', XMLDB_INDEX_NOTUNIQUE, ['userid']);
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_key($table, new xmldb_key('userid', XMLDB_KEY_FOREIGN, ['userid'], 'user', ['id']));
+        }
+        $index = new xmldb_index('courseid', XMLDB_INDEX_NOTUNIQUE, ['courseid']);
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_key($table, new xmldb_key('courseid', XMLDB_KEY_FOREIGN, ['courseid'], 'course', ['id']));
+        }
+
+        upgrade_plugin_savepoint(true, 2026072700, 'local', 'oerclient');
+    }
+
     return true;
 }

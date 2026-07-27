@@ -25,8 +25,13 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_oerclient';
-$plugin->version   = 2026072302;
-$plugin->requires  = 2024100700; // Moodle 5.0 — this plugin uses the 4.4+ Hooks API.
+$plugin->version   = 2026072700;
+// 2025041400 = the Moodle 5.0 branching version. The previous value
+// (2024100700) was Moodle 4.5 while its comment claimed 5.0 — and this
+// plugin hard-depends on core\navigation\navigation_node, which only exists
+// under that namespace since 5.0 (MDL-82159), so a 4.5 install would fatal
+// on every course page for a sharer.
+$plugin->requires  = 2025041400;
 $plugin->supported = [500, 502];
-$plugin->release   = '0.1.2';
+$plugin->release   = '0.1.3';
 $plugin->maturity  = MATURITY_ALPHA;

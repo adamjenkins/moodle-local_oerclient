@@ -40,6 +40,13 @@ Site administration > Plugins > Local plugins > OER Client:
 4. Each teacher who wants to share/review links their own account via the
    "Link my Exchange account" button on `/local/oerclient/index.php`.
 
+Connections to the Exchange verify TLS certificates and respect Moodle's
+outbound-request security checks. **Accept invalid TLS certificates**
+(`acceptinvalidcerts`, off by default) exists only for development rigs
+with self-signed certificates on private networks — never enable it on a
+production site; it lets a network attacker read every token this plugin
+sends.
+
 ## Requirements
 
 - Moodle 5.0–5.2 (`$plugin->supported`).

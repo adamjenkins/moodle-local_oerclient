@@ -26,7 +26,7 @@ require(__DIR__ . '/../../config.php');
 require_login();
 
 $courseid = required_param('courseid', PARAM_INT);
-$checklistparam = optional_param('checklist', '', PARAM_TEXT);
+$checklistparam = optional_param('checklist', '', PARAM_BASE64);
 
 $context = context_course::instance($courseid);
 require_capability('local/oerclient:import', $context);

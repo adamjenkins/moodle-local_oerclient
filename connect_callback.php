@@ -29,6 +29,10 @@ use local_oerclient\local\link_state;
 
 require(__DIR__ . '/../../config.php');
 require_login();
+if (isguestuser()) {
+    // A guest "personal" link would be shared by every guest session.
+    throw new moodle_exception('noguest');
+}
 
 $linkcode = required_param('linkcode', PARAM_ALPHANUM);
 $state = required_param('state', PARAM_ALPHANUM);
@@ -43,7 +47,9 @@ if (!link_state::verify($state)) {
     throw new moodle_exception('error_invalidlinkstate', 'local_oerclient');
 }
 
-$PAGE->set_url('/local/oerclient/connect_callback.php', ['linkcode' => $linkcode]);
+// Deliberately no linkcode param here: the one-time code has no
+// business landing in logs or referrer headers via the page URL.
+$PAGE->set_url('/local/oerclient/connect_callback.php');
 $PAGE->set_context(context_system::instance());
 
 $exchangeurl = get_config('local_oerclient', 'exchangeurl');

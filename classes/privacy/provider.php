@@ -26,7 +26,7 @@ use core_privacy\local\request\writer;
 /**
  * Privacy provider for local_oerclient. All data lives under the system
  * context; the plugin also sends data to an external system (the configured
- * Exchange), declared via a subsystem link.
+ * Exchange), declared via an external location link.
  *
  * @package    local_oerclient
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
@@ -39,6 +39,7 @@ class provider implements
     #[\Override]
     public static function get_metadata(collection $collection): collection {
         $collection->add_database_table('local_oerclient_link', [
+            'userid' => 'privacy:metadata:local_oerclient_link:userid',
             'exchangeuserid' => 'privacy:metadata:local_oerclient_link:exchangeuserid',
             'token' => 'privacy:metadata:local_oerclient_link:token',
             'timecreated' => 'privacy:metadata:local_oerclient_link:timecreated',
@@ -46,20 +47,37 @@ class provider implements
 
         $collection->add_database_table('local_oerclient_shares', [
             'userid' => 'privacy:metadata:local_oerclient_shares:userid',
+            'courseid' => 'privacy:metadata:local_oerclient_shares:courseid',
+            'cmid' => 'privacy:metadata:local_oerclient_shares:cmid',
+            'type' => 'privacy:metadata:local_oerclient_shares:type',
             'title' => 'privacy:metadata:local_oerclient_shares:title',
+            'summary' => 'privacy:metadata:local_oerclient_shares:summary',
+            'language' => 'privacy:metadata:local_oerclient_shares:language',
+            'tags' => 'privacy:metadata:local_oerclient_shares:tags',
+            'licenseshortname' => 'privacy:metadata:local_oerclient_shares:licenseshortname',
+            'activitytype' => 'privacy:metadata:local_oerclient_shares:activitytype',
+            'status' => 'privacy:metadata:local_oerclient_shares:status',
+            'exchangeresourceid' => 'privacy:metadata:local_oerclient_shares:exchangeresourceid',
+            'errormessage' => 'privacy:metadata:local_oerclient_shares:errormessage',
             'timecreated' => 'privacy:metadata:local_oerclient_shares:timecreated',
+            'timemodified' => 'privacy:metadata:local_oerclient_shares:timemodified',
         ], 'privacy:metadata:local_oerclient_shares');
 
         $collection->add_database_table('local_oerclient_imports', [
             'userid' => 'privacy:metadata:local_oerclient_imports:userid',
+            'exchangeresourceid' => 'privacy:metadata:local_oerclient_imports:exchangeresourceid',
+            'exchangeversionid' => 'privacy:metadata:local_oerclient_imports:exchangeversionid',
+            'courseid' => 'privacy:metadata:local_oerclient_imports:courseid',
             'timecreated' => 'privacy:metadata:local_oerclient_imports:timecreated',
         ], 'privacy:metadata:local_oerclient_imports');
 
-        $collection->add_subsystem_link(
-            'local_oerexchange',
-            [],
-            'privacy:metadata:oerexchange'
-        );
+        // The Exchange is an EXTERNAL system, not a Moodle subsystem: what
+        // leaves this site is the linked personal token exchange and the
+        // shared course content itself.
+        $collection->add_external_location_link('oerexchange', [
+            'token' => 'privacy:metadata:oerexchange:token',
+            'sharedcontent' => 'privacy:metadata:oerexchange:sharedcontent',
+        ], 'privacy:metadata:oerexchange');
 
         return $collection;
     }
@@ -130,11 +148,25 @@ class provider implements
             'linked' => $link ? true : false,
             'exchangeuserid' => $link->exchangeuserid ?? null,
             'shares' => array_values(array_map(fn($s) => [
-                'title' => $s->title, 'status' => $s->status,
+                'title' => $s->title,
+                'summary' => $s->summary,
+                'tags' => $s->tags,
+                'type' => $s->type,
+                'courseid' => $s->courseid,
+                'cmid' => $s->cmid,
+                'language' => $s->language,
+                'licenseshortname' => $s->licenseshortname,
+                'activitytype' => $s->activitytype,
+                'status' => $s->status,
+                'exchangeresourceid' => $s->exchangeresourceid,
+                'errormessage' => $s->errormessage,
                 'timecreated' => \core_privacy\local\request\transform::datetime($s->timecreated),
+                'timemodified' => \core_privacy\local\request\transform::datetime($s->timemodified),
             ], $shares)),
             'imports' => array_values(array_map(fn($i) => [
                 'courseid' => $i->courseid,
+                'exchangeresourceid' => $i->exchangeresourceid,
+                'exchangeversionid' => $i->exchangeversionid,
                 'timecreated' => \core_privacy\local\request\transform::datetime($i->timecreated),
             ], $imports)),
         ];
