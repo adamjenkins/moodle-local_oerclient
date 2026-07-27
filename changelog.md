@@ -3,6 +3,55 @@
 All notable changes to this project are documented in this file, in
 [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [0.1.3] - 2026-07-27
+
+### Security
+
+- TLS verification and core's outbound-request security guard are ON by
+  default for every Exchange connection. Previous releases shipped
+  `verify => false` + `ignoresecurity => true` unconditionally, so all
+  site/personal tokens travelled over unverifiable TLS on any install; the
+  development-harness case now opts in via a new default-off
+  `acceptinvalidcerts` setting whose description says exactly what it
+  gives up.
+- `import_manager::download()` refuses download URLs that are not on the
+  configured Exchange origin (scheme/host/port) — the URL arrives inside
+  the Exchange's own response and could otherwise point this server at
+  internal-network hosts.
+- Creator profile URLs and data-resource download URLs received from the
+  Exchange are cleaned with `PARAM_URL` before becoming links, closing a
+  `javascript:` href vector open to a malicious/compromised Exchange.
+- Guests are refused on browse, preview and the account-linking callback
+  (a guest "personal" link row would be shared by every guest session),
+  and the one-time link code is no longer echoed into the page URL.
+
+### Fixed
+
+- Privacy provider: the Exchange is now declared with
+  `add_external_location_link()` (it is an external system, not a Moodle
+  subsystem — the old declaration was a dead no-op with an empty field
+  list), and the metadata/export now cover every personal-data column of
+  all three tables (summaries, tags, course ids, error messages, import
+  records).
+- `$plugin->requires` corrected from Moodle 4.5 to 5.0 (2025041400): the
+  plugin depends on `core\navigation\navigation_node`, which only exists
+  since 5.0, so the old floor permitted installs that fatal on every
+  course page.
+- `share.php` no longer risks a PHP error on a stale cmid in its render
+  path; `register.php` rejects a contact address that email-cleaning
+  reduced to empty; `exchange_client::call()` returns an empty array (not
+  a TypeError) on a scalar JSON response; the backup controller is
+  destroyed on every exit path of `run_backup()`.
+
+### Changed
+
+- Downloads stream to disk (`sink`) instead of buffering whole `.mbz`
+  files in memory; the import-result checklist parameter is typed
+  `PARAM_BASE64`; Exchange transport errors are translatable strings;
+  share/register/browse form fields gained proper label associations; the
+  schema declares foreign keys (user/course relations) with an upgrade
+  step adding the missing indexes.
+
 ## [0.1.2] - 2026-07-23
 
 ### Fixed

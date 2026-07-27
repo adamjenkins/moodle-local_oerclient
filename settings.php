@@ -64,6 +64,13 @@ if ($hassiteconfig) {
         ''
     ));
 
+    $settings->add(new admin_setting_configcheckbox(
+        'local_oerclient/acceptinvalidcerts',
+        get_string('settings_acceptinvalidcerts', 'local_oerclient'),
+        get_string('settings_acceptinvalidcerts_desc', 'local_oerclient'),
+        0
+    ));
+
     $ADMIN->add('local_oerclient_category', new admin_externalpage(
         'local_oerclient_register',
         get_string('registertitle', 'local_oerclient'),

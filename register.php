@@ -38,6 +38,11 @@ $doregister = optional_param('doregister', 0, PARAM_INT);
 if ($doregister && confirm_sesskey()) {
     $exchangeurl = get_config('local_oerclient', 'exchangeurl');
     $contact = required_param('contact', PARAM_EMAIL);
+    if ($contact === '') {
+        // PARAM_EMAIL silently cleans an invalid address to '' — without
+        // this check the site would register with an empty contact.
+        throw new moodle_exception('invalidemail');
+    }
     $client = new exchange_client($exchangeurl);
     $siteid = $client->register($SITE->fullname, $CFG->wwwroot, $contact);
     set_config('siteid', $siteid, 'local_oerclient');
@@ -62,9 +67,14 @@ if (empty($exchangeurl)) {
     echo html_writer::start_tag('form', ['method' => 'post', 'action' => new moodle_url('/local/oerclient/register.php')]);
     echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'doregister', 'value' => 1]);
     echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
-    echo html_writer::tag('label', get_string('sitecontact', 'local_oerclient'));
+    echo html_writer::tag(
+        'label',
+        get_string('sitecontact', 'local_oerclient'),
+        ['for' => 'oerclient-register-contact']
+    );
     echo html_writer::empty_tag('input', [
-        'type' => 'email', 'name' => 'contact', 'class' => 'form-control mb-2', 'required' => 'required',
+        'type' => 'email', 'name' => 'contact', 'id' => 'oerclient-register-contact',
+        'class' => 'form-control mb-2', 'required' => 'required',
     ]);
     echo html_writer::empty_tag('input', [
         'type' => 'submit', 'value' => get_string('registerbutton', 'local_oerclient'), 'class' => 'btn btn-primary',

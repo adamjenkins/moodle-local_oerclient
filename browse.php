@@ -26,6 +26,9 @@ use local_oerclient\local\exchange_client;
 
 require(__DIR__ . '/../../config.php');
 require_login();
+if (isguestuser()) {
+    throw new moodle_exception('noguest');
+}
 
 $query = optional_param('q', '', PARAM_TEXT);
 $type = optional_param('type', '', PARAM_ALPHA);
@@ -52,6 +55,7 @@ if (empty($exchangeurl) || empty($sitetoken)) {
 echo html_writer::start_tag('form', ['method' => 'get', 'action' => new moodle_url('/local/oerclient/browse.php')]);
 echo html_writer::empty_tag('input', [
     'type' => 'text', 'name' => 'q', 'value' => $query, 'class' => 'form-control d-inline w-auto',
+    'aria-label' => get_string('searchplaceholder', 'local_oerclient'),
 ]);
 echo html_writer::tag(
     'label',
@@ -60,7 +64,7 @@ echo html_writer::tag(
 );
 echo html_writer::select(
     [
-        '' => '',
+        '' => get_string('all'),
         'course' => get_string('typecourse', 'local_oerclient'),
         'activity' => get_string('typeactivity', 'local_oerclient'),
         'data' => get_string('typedata', 'local_oerclient'),
@@ -98,8 +102,11 @@ if (empty($result['results'])) {
         echo html_writer::tag('h5', html_writer::link($url, s($r['title'])), ['class' => 'card-title']);
         if (!empty($r['creatorname'])) {
             $creatorlabel = s($r['creatorname']);
-            if (!empty($r['creatorprofileurl'])) {
-                $creatorlabel = html_writer::link($r['creatorprofileurl'], $creatorlabel);
+            // PARAM_URL rejects javascript:/data: schemes — html_writer
+            // only attribute-escapes, and this URL came from the Exchange.
+            $profileurl = clean_param((string) ($r['creatorprofileurl'] ?? ''), PARAM_URL);
+            if ($profileurl !== '') {
+                $creatorlabel = html_writer::link($profileurl, $creatorlabel);
             }
             echo html_writer::tag(
                 'div',
