@@ -27,7 +27,10 @@ namespace local_oerclient\local;
  * it with clean_param(..., PARAM_URL), the same distrust-every-Exchange-URL
  * rule browse.php already applies to creatorprofileurl. Both shapes match
  * the Exchange's rendering (same dimensions, same Bootstrap utilities), so
- * the catalogue looks consistent across the platform.
+ * the catalogue looks consistent across the platform. A resource whose
+ * author added no cover draws this plugin's own copy of the platform's
+ * default thumbnail (pix/defaultthumbnail.jpg) — served locally, never
+ * fetched from the Exchange.
  *
  * @package    local_oerclient
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
@@ -45,25 +48,23 @@ class cover_image {
      *
      * Always returns markup, even with no image: a grid where only some cards
      * carry a picture lands each row's text at a different height, which
-     * reads as a broken page rather than as "this one has no cover".
+     * reads as a broken page rather than as "this one has no cover". A
+     * resource with no custom cover draws the platform's default thumbnail
+     * at the same size.
      *
      * @param string|null $url already cleaned with clean_param(..., PARAM_URL), or null for none
      * @return string HTML
      */
     public static function card(?string $url): string {
-        $style = 'height:' . self::CARD_HEIGHT . 'px;object-fit:cover;';
+        global $OUTPUT;
 
-        if ($url === null || $url === '') {
-            return \html_writer::div('', 'oerclient-thumb oerclient-thumb-empty card-img-top bg-light border-bottom', [
-                'style' => $style,
-                'aria-hidden' => 'true',
-            ]);
-        }
+        $isdefault = $url === null || $url === '';
+        $src = $isdefault ? $OUTPUT->image_url('defaultthumbnail', 'local_oerclient')->out(false) : $url;
 
         return \html_writer::empty_tag('img', [
-            'src' => $url,
-            'class' => 'oerclient-thumb card-img-top',
-            'style' => $style,
+            'src' => $src,
+            'class' => 'oerclient-thumb card-img-top' . ($isdefault ? ' oerclient-thumb-default' : ''),
+            'style' => 'height:' . self::CARD_HEIGHT . 'px;object-fit:cover;',
             'loading' => 'lazy',
             // Deliberately empty: every call site puts the resource's title
             // immediately next to this image as a link, so alt text here
@@ -75,23 +76,22 @@ class cover_image {
     /**
      * The small square thumbnail beside a resource in a block's list.
      *
+     * A resource with no custom cover draws the platform's default thumbnail
+     * at the same size, for the same row-alignment reason as card().
+     *
      * @param string|null $url already cleaned with clean_param(..., PARAM_URL), or null for none
      * @return string HTML
      */
     public static function listitem(?string $url): string {
-        $style = 'width:' . self::LIST_SIZE . 'px;height:' . self::LIST_SIZE . 'px;object-fit:cover;';
+        global $OUTPUT;
 
-        if ($url === null || $url === '') {
-            return \html_writer::div('', 'oerclient-thumb oerclient-thumb-empty rounded bg-light border flex-shrink-0', [
-                'style' => $style,
-                'aria-hidden' => 'true',
-            ]);
-        }
+        $isdefault = $url === null || $url === '';
+        $src = $isdefault ? $OUTPUT->image_url('defaultthumbnail', 'local_oerclient')->out(false) : $url;
 
         return \html_writer::empty_tag('img', [
-            'src' => $url,
-            'class' => 'oerclient-thumb rounded flex-shrink-0',
-            'style' => $style,
+            'src' => $src,
+            'class' => 'oerclient-thumb rounded flex-shrink-0' . ($isdefault ? ' oerclient-thumb-default' : ''),
+            'style' => 'width:' . self::LIST_SIZE . 'px;height:' . self::LIST_SIZE . 'px;object-fit:cover;',
             'loading' => 'lazy',
             // Empty for the same reason as card(): the title is right there.
             'alt' => '',
