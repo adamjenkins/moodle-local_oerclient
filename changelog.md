@@ -3,6 +3,25 @@
 All notable changes to this project are documented in this file, in
 [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.0.0] - 2026-07-29
+
+First stable release. `$plugin->maturity` is now `MATURITY_STABLE`.
+
+### Added
+
+- Cover-image thumbnails on the catalogue: `browse.php` leads each card with
+  the resource's cover as served by the Exchange, and `resource_preview.php`
+  shows the same cover beside the structure preview.
+- `local_oerclient\local\cover_image`, with a neutral default panel of the
+  same size for resources that have no cover, so cards stay aligned.
+
+### Security
+
+- Every cover-image URL is passed through `clean_param(..., PARAM_URL)` before
+  it reaches an `src`. These URLs arrive over the network from the Exchange,
+  and `html_writer` only escapes attributes — it does not vet schemes. Same
+  distrust already applied to Exchange-supplied download and profile URLs.
+
 ## [0.1.3] - 2026-07-27
 
 ### Security

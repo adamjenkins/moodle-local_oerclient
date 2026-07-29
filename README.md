@@ -14,9 +14,14 @@ post-import localization checklist.
 - **Identity**: one-time site registration (admin), then a per-teacher
   account-linking handshake (`connect_callback.php`) that mints a personal
   Exchange token — see `local_oerexchange`'s README for the full handshake.
-- **Browse/import**: `browse.php` calls the Exchange's search API;
-  `resource_preview.php` shows the structure preview and required-plugin
-  disclosure before importing via `restore_controller`. Data resources
+- **Browse/import**: `browse.php` calls the Exchange's search API and leads
+  each catalogue card with the resource's cover-image thumbnail as served by
+  the Exchange (a neutral panel of the same size where a resource has no
+  cover, so cards stay aligned); `resource_preview.php` shows the same cover
+  alongside the structure preview and required-plugin disclosure before
+  importing via `restore_controller`. Every image URL the Exchange supplies
+  is passed through `clean_param(..., PARAM_URL)` first — nothing a remote
+  Exchange sends is trusted verbatim. Data resources
   (`type = 'data'` — glossaries, question banks, and other generic files) show
   a **Download** button instead of the import form. A course created by an
   import is **hidden from students** until you have reviewed it and made it

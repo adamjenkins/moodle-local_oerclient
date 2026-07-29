@@ -1,23 +1,24 @@
-# Release notes — 0.1.3
+# Release notes — 1.0.0
 
-Security-review hardening of everything that crosses the network.
+The first stable release. The plugin is declared `MATURITY_STABLE`: the share
+wizard, the registration and account-linking handshake, browsing, importing via
+`restore_controller`, and the share-status/update path have all been exercised
+end to end against a real Exchange, and their interfaces are now considered
+settled.
 
-Connections to the Exchange now verify TLS certificates and respect
-Moodle's outbound-request security checks by default. Earlier releases
-disabled both unconditionally (a leftover of the development harness's
-self-signed certificates), which let any network attacker read every token
-this plugin sends; development rigs can opt back in with the new,
-default-off, clearly-marked "Accept invalid TLS certificates" setting.
-Download URLs offered by the Exchange are refused unless they point at the
-configured Exchange host, profile/download links from the Exchange pass a
-URL-scheme whitelist before rendering, and large downloads stream to disk
-instead of transiting memory.
+One change lands with it. **Catalogue listings now show cover images.**
+`browse.php` leads each card with the resource's cover-image thumbnail as
+served by the Exchange, and `resource_preview.php` shows the same cover beside
+the structure preview. A resource with no cover gets a neutral panel of the
+same size, so cards stay aligned either way.
 
-The privacy declaration now tells the whole truth: the Exchange is
-declared as the external system it is, and every personal-data column of
-the three tables (share summaries and tags, course ids, error messages,
-import records) is listed and exported. Also: the installation floor is
-corrected to Moodle 5.0 (a 4.5 install would fatal on every course page),
-guest access is refused on the browse/preview/link pages, the one-time
-link code no longer lands in the page URL, and the schema gains its
-missing foreign keys and indexes.
+Every image URL involved arrives over the network from the Exchange and is
+passed through `clean_param(..., PARAM_URL)` before it reaches an `src` — the
+same distrust this plugin already applies to Exchange-supplied download and
+profile URLs.
+
+Verified before release: 47 PHPUnit tests green, phpcs and moodlecheck clean,
+and a live end-to-end run confirming that sharing a course, and sharing a
+single activity, both reach the Exchange carrying no student data — no
+`users.xml`, no enrolments, no submissions, grades or forum posts, and no
+`userid` anywhere in the uploaded backup.
