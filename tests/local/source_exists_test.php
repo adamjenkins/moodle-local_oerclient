@@ -27,6 +27,36 @@ use PHPUnit\Framework\Attributes\CoversClass;
  */
 #[CoversClass(share_manager::class)]
 final class source_exists_test extends \advanced_testcase {
+    /**
+     * Delete a course module, on any Moodle this plugin supports (5.0–5.2).
+     *
+     * There is no single API that works across the range. Moodle 5.2 moved
+     * activity editing onto format actions and deprecated the old global
+     * (`course_delete_module()` carries a `#[\core\attribute\deprecated]`
+     * pointing at `cmactions::delete`), while 5.0 and 5.1 have the global
+     * and a `cmactions` class with no `delete()` method at all — which is
+     * why calling it unconditionally passed locally on 5.2 and failed CI on
+     * 5.0/5.1 with "Call to undefined method".
+     *
+     * Preferring the new API where it exists also keeps the deprecated call
+     * off the 5.2 matrix cells, where `--fail-on-warning` would be entitled
+     * to object to it.
+     *
+     * @param \stdClass $course the module's course
+     * @param int $cmid course module id to delete
+     */
+    protected function delete_module(\stdClass $course, int $cmid): void {
+        global $CFG;
+
+        if (method_exists(\core_courseformat\local\cmactions::class, 'delete')) {
+            (new \core_courseformat\local\cmactions($course))->delete($cmid);
+            return;
+        }
+
+        require_once($CFG->dirroot . '/course/lib.php');
+        course_delete_module($cmid);
+    }
+
     public function test_a_live_course_share_has_its_source(): void {
         $this->resetAfterTest();
 
@@ -97,7 +127,7 @@ final class source_exists_test extends \advanced_testcase {
         $page = $this->getDataGenerator()->create_module('page', ['course' => $course->id]);
         $share = (object) ['courseid' => $course->id, 'cmid' => $page->cmid, 'type' => 'activity'];
 
-        (new \core_courseformat\local\cmactions($course))->delete($page->cmid);
+        $this->delete_module($course, (int) $page->cmid);
 
         $this->assertTrue(
             $GLOBALS['DB']->record_exists('course', ['id' => $course->id]),
@@ -145,7 +175,7 @@ final class source_exists_test extends \advanced_testcase {
             'timecreated' => time(), 'timemodified' => time(),
         ]);
 
-        (new \core_courseformat\local\cmactions($course))->delete($page->cmid);
+        $this->delete_module($course, (int) $page->cmid);
 
         $task = new \local_oerclient\task\share_upload_task();
         $task->set_custom_data(['shareid' => $shareid]);
