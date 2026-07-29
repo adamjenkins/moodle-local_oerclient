@@ -55,6 +55,7 @@ $string['error_userdatalockedon'] = 'このサイトのバックアップ既定�
 $string['exchangeerror'] = 'Exchangeエラー: {$a}';
 $string['exchangehidden'] = '非表示';
 $string['exchangehiddenhint'] = 'このリソースはExchange上で非表示にされているため、カタログには表示されていません。Exchangeのリソースページから再び表示できます。';
+$string['exchangerejected'] = 'Exchangeが直近のアップロードを拒否したため、公開されませんでした: {$a}';
 $string['exchangevisibility'] = 'Exchange上の状態';
 $string['exchangevisible'] = 'カタログに表示中';
 $string['filterbytype'] = '種別';

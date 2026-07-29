@@ -32,7 +32,12 @@ post-import localization checklist.
   visible or hidden, downloads and imports — and offers **Update the shared
   copy**, which re-uploads the course as it stands now and replaces the
   published file without creating a duplicate catalogue entry. A share whose
-  source course or activity has since been deleted says so instead.
+  source course or activity has since been deleted says so instead. If the
+  Exchange **refused** the upload — most often because the backup contained
+  user data — the page says so in the Exchange's own words, rather than
+  leaving the share looking published. (Sharing from here always strips user
+  data, so this is mainly a safety net for backups uploaded on the Exchange
+  directly.)
 
 ## Configuration
 

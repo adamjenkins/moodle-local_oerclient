@@ -55,6 +55,7 @@ $string['error_userdatalockedon'] = 'This site\'s backup defaults force user dat
 $string['exchangeerror'] = 'Exchange error: {$a}';
 $string['exchangehidden'] = 'Hidden';
 $string['exchangehiddenhint'] = 'You hid this resource on the Exchange, so it is not in the catalogue. You can show it again from its page there.';
+$string['exchangerejected'] = 'The Exchange rejected your most recent upload, so it was not published: {$a}';
 $string['exchangevisibility'] = 'On the Exchange';
 $string['exchangevisible'] = 'Visible in the catalogue';
 $string['filterbytype'] = 'Type';

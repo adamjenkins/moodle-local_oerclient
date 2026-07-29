@@ -22,6 +22,15 @@ First stable release. `$plugin->maturity` is now `MATURITY_STABLE`.
   and `html_writer` only escapes attributes — it does not vet schemes. Same
   distrust already applied to Exchange-supplied download and profile URLs.
 
+### Fixed
+
+- `share_status.php` reports an upload the Exchange rejected, using the
+  Exchange's own reason (`versionstatus`/`versionerror` from
+  `local_oerexchange_get_share_status`). The Exchange acknowledges a publish
+  before it validates the file, so a share could sit here marked published
+  while the Exchange had refused it, with the reason readable only on the
+  Exchange's moderation page — which a teacher on this site cannot see.
+
 ## [0.1.3] - 2026-07-27
 
 ### Security

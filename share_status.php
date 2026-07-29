@@ -111,6 +111,19 @@ if ($share->status === 'published' && $share->exchangeresourceid) {
         }
     }
 
+    // The Exchange acknowledges a publish before it has validated the file
+    // (parsing runs as an adhoc task there), so this page could previously
+    // show a share as published while the Exchange had already refused it —
+    // and the reason lived only on the Exchange's own moderation page, which
+    // a teacher on this site cannot see. If the newest upload was rejected,
+    // say so here, in the words the Exchange used.
+    if ($status && ($status['versionstatus'] ?? '') === 'failed' && !empty($status['versionerror'])) {
+        echo $OUTPUT->notification(
+            get_string('exchangerejected', 'local_oerclient', s($status['versionerror'])),
+            'error'
+        );
+    }
+
     if ($status) {
         $table = new html_table();
         $table->attributes['class'] = 'generaltable w-auto';

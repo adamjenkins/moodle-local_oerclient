@@ -17,7 +17,14 @@ passed through `clean_param(..., PARAM_URL)` before it reaches an `src` — the
 same distrust this plugin already applies to Exchange-supplied download and
 profile URLs.
 
-Verified before release: 47 PHPUnit tests green, phpcs and moodlecheck clean,
+**The share-status page now reports a rejected upload.** The Exchange
+acknowledges a publish before it has validated the file, so a share could show
+as published here while the Exchange had already refused it — and the reason
+lived only on the Exchange's moderation page, which a teacher on this site
+cannot see. When the newest upload was rejected, this page now says so in the
+Exchange's own words.
+
+Verified before release: 47 PHPUnit tests green, phpcs clean,
 and a live end-to-end run confirming that sharing a course, and sharing a
 single activity, both reach the Exchange carrying no student data — no
 `users.xml`, no enrolments, no submissions, grades or forum posts, and no
