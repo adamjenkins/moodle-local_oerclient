@@ -145,6 +145,7 @@ $string['sharetitlelabel'] = 'Title';
 $string['sharetoexchange'] = 'Share to OER Exchange';
 $string['sitecontact'] = 'Contact email';
 $string['structurepreview'] = 'Structure preview';
+$string['thumbnailalt'] = 'Thumbnail for {$a}';
 $string['typeactivity'] = 'Activity';
 $string['typecourse'] = 'Course';
 $string['typedata'] = 'Data resource';

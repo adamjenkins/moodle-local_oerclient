@@ -145,6 +145,7 @@ $string['sharetitlelabel'] = 'タイトル';
 $string['sharetoexchange'] = 'OER Exchangeへ共有';
 $string['sitecontact'] = '連絡先メールアドレス';
 $string['structurepreview'] = '構造のプレビュー';
+$string['thumbnailalt'] = '{$a} のサムネイル';
 $string['typeactivity'] = '活動';
 $string['typecourse'] = 'コース';
 $string['typedata'] = 'データリソース';

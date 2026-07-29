@@ -98,6 +98,17 @@ if (empty($result['results'])) {
         $url = new moodle_url('/local/oerclient/resource_preview.php', ['id' => $r['id']]);
         echo html_writer::start_tag('div', ['class' => 'col']);
         echo html_writer::start_tag('div', ['class' => 'card h-100']);
+        // The card leads with the cover image, matching the Exchange's own
+        // catalogue. PARAM_URL rejects javascript:/data: schemes — this URL
+        // came over the wire from the Exchange, same distrust as
+        // creatorprofileurl below. Empty string becomes null so the
+        // same-sized neutral panel keeps the grid rows aligned.
+        $coverurl = clean_param((string) ($r['coverimageurl'] ?? ''), PARAM_URL);
+        echo html_writer::link(
+            $url,
+            \local_oerclient\local\cover_image::card($coverurl !== '' ? $coverurl : null),
+            ['tabindex' => '-1', 'aria-hidden' => 'true']
+        );
         echo html_writer::start_tag('div', ['class' => 'card-body']);
         echo html_writer::tag('h5', html_writer::link($url, s($r['title'])), ['class' => 'card-title']);
         if (!empty($r['creatorname'])) {

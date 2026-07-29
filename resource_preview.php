@@ -94,6 +94,22 @@ if ($resource['type'] !== 'data' && data_submitted() && confirm_sesskey() && opt
 
 echo $OUTPUT->header();
 
+// Cover image, when the Exchange supplied one — a plain inline <img>, the
+// same shape the Exchange's own resource.php draws. No placeholder when
+// there is none: this is a single-resource page, not a grid, so there is no
+// row-alignment reason to show an empty panel. PARAM_URL rejects
+// javascript:/data: schemes — this URL came over the wire from the Exchange.
+$coverurl = clean_param((string) ($resource['coverimageurl'] ?? ''), PARAM_URL);
+if ($coverurl !== '') {
+    echo html_writer::empty_tag('img', [
+        'src' => $coverurl,
+        // No s() here: html_writer escapes attribute values itself, so
+        // pre-escaping would double-encode any & or quotes in the title.
+        'alt' => get_string('thumbnailalt', 'local_oerclient', $resource['title']),
+        'class' => 'img-fluid mb-3', 'style' => 'max-height:200px;',
+    ]);
+}
+
 if (!empty($resource['creatorname'])) {
     $creatorlabel = s($resource['creatorname']);
     // PARAM_URL rejects javascript:/data: schemes — html_writer only
