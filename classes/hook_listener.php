@@ -17,7 +17,6 @@
 namespace local_oerclient;
 
 use core\hook\navigation\secondary_extend;
-use core\navigation\navigation_node;
 
 /**
  * Hook listeners for local_oerclient.
@@ -54,7 +53,15 @@ class hook_listener {
         $hook->get_secondaryview()->add(
             get_string('sharetoexchange', 'local_oerclient'),
             new \moodle_url('/local/oerclient/share.php', ['courseid' => $PAGE->course->id]),
-            navigation_node::TYPE_SETTING,
+            // The global class name, deliberately, not core\navigation\navigation_node:
+            // the namespaced class only exists from Moodle 5.1, while this plugin
+            // supports 5.0-5.2. On 5.0 the global IS the class; on 5.1+ core ends
+            // lib/classes/navigation/navigation_node.php with a class_alias() back
+            // to the global name, so this one reference is correct on all three.
+            // Importing the namespaced name fataled on 5.0 with "Class
+            // core\navigation\navigation_node not found" — on a real course page,
+            // not just in tests.
+            \navigation_node::TYPE_SETTING,
             null,
             'oerclientshare'
         );
