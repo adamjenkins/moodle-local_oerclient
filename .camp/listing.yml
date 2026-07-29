@@ -1,0 +1,41 @@
+# camp listing manifest — descriptive content for your plugin's page.
+# Edit freely and commit; camp ingests this file at each tagged release.
+# Schema: https://camp-registry.org/schema/listing.schema.json
+name: "OER Client"
+summary: "The client plugin for the OER Exchange platform. Install it on a teacher's own Moodle site to share courses and activities to a central Exchange, browse its catalogue, and import from it."
+description: |
+  The companion to `local_oerexchange`, which runs on the central Exchange
+  site. This is the plugin a teacher's own Moodle site installs.
+
+  - **Share** — a "Share to OER Exchange" link on every course's secondary
+    navigation opens a wizard (whole course or a single activity, license,
+    metadata). Sharing queues an ad-hoc task that builds a backup with the user
+    data stripped out, and uploads it to the Exchange.
+  - **Identity** — a one-time site registration by an administrator, then a
+    per-teacher account-linking handshake that mints a personal Exchange token,
+    so each teacher's shares are attributed to them.
+  - **Browse and import** — search the Exchange's catalogue, read a resource's
+    structure preview and required-plugin disclosure before committing, then
+    import it. A course created by an import is hidden from students until you
+    have reviewed it and made it visible; importing an activity into a course
+    you already had never changes that course's visibility. Generic data
+    resources offer a download rather than an import.
+  - **Share status** — reports what the Exchange actually holds for each of your
+    shares: status, first published, last updated, visible or hidden, downloads
+    and imports. "Update the shared copy" re-uploads the course as it stands
+    now and replaces the published file, without creating a duplicate catalogue
+    entry. A share whose source course or activity has since been deleted says
+    so, rather than failing.
+
+  Connections to the Exchange verify TLS certificates and respect Moodle's
+  outbound-request security checks. The setting that accepts invalid
+  certificates is off by default and exists only for development rigs on
+  private networks.
+labels:
+  - fully-free
+links:
+  docs: https://github.com/adamjenkins/moodle-local_oerclient#readme
+  issues: https://github.com/adamjenkins/moodle-local_oerclient/issues
+# screenshots:
+#   - path: .camp/screenshots/overview.png
+#     caption: Main view
