@@ -12,8 +12,8 @@ The Exchange is now the sole authority on which licences a share may use.
   successfully confirmed list of licences is used and the teacher is told
   it may be out of date, rather than the form silently falling back to
   this site's own licences or failing outright.
-- Licence shortnames (for example `CC-BY`) now display in upper case on the
-  catalogue browse page and the resource preview page, matching how they
-  are written everywhere else.
+- Licence shortnames (for example `CC-SA-4.0`) now display in upper case on
+  the catalogue browse page and the resource preview page, matching how
+  they are written everywhere else.
 
 No database or capability changes. No action is required after upgrading.
