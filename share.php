@@ -61,6 +61,18 @@ if (data_submitted() && confirm_sesskey() && optional_param('dosubmit', 0, PARAM
         $activitytype = $cm->modname;
     }
 
+    $licencestate = \local_oerclient\local\allowed_licenses::state();
+    if (!$licencestate['shortnames']) {
+        // No list at all: never reached the Exchange, or it accepts nothing.
+        // Either way this is not "your licence is invalid" — say which it is.
+        throw new moodle_exception(
+            $licencestate['confirmed'] === null
+                ? 'error_licencesunavailable'
+                : 'error_nolicencesaccepted',
+            'local_oerclient'
+        );
+    }
+
     // Re-validate against the same menu the <select> below was built from —
     // required_param() alone only confirms it's a string, not that it's one
     // of the licenses actually offered (MDL Shield audit finding, 2026-07-18).
