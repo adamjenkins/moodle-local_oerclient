@@ -1,13 +1,19 @@
-# Release notes — 1.0.1
+# Release notes — 1.0.2
 
-No change to the plugin itself. This release exists to fix release
-publication to the camp registry: the previous release workflow pinned
-camp-tools v0.2.25, whose index-entry schema predates the `source-repo-id`
-field the registry added to every claimed entry on 2026-07-28 (OIDC trusted
-publishing), so publication of v1.0.0 could not succeed. The workflow is
-replaced with the registry's current tokenless template (OIDC trusted
-publishing, camp-tools v0.2.35); no access token, fork or repository secret
-is needed any more.
+The Exchange is now the sole authority on which licences a share may use.
 
-The installable plugin code is identical to 1.0.0 apart from the version
-metadata — the workflow file is excluded from the distribution ZIP.
+- The "Share to OER Exchange" form's licence field is populated from the
+  list of licences the Exchange currently accepts, instead of this site's
+  own licence configuration.
+- A submitted licence is checked again against the Exchange's list when the
+  share is queued, so a licence the Exchange no longer accepts is rejected
+  even if it was offered a moment earlier.
+- If the Exchange cannot be reached when the form loads, the last
+  successfully confirmed list of licences is used and the teacher is told
+  it may be out of date, rather than the form silently falling back to
+  this site's own licences or failing outright.
+- Licence shortnames (for example `CC-BY`) now display in upper case on the
+  catalogue browse page and the resource preview page, matching how they
+  are written everywhere else.
+
+No database or capability changes. No action is required after upgrading.

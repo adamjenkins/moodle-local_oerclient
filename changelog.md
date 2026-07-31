@@ -3,6 +3,20 @@
 All notable changes to this project are documented in this file, in
 [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.0.2] - 2026-07-31
+
+### Changed
+
+- The share form's licence field is now populated from the Exchange's
+  current list of accepted licences, instead of this site's own licence
+  configuration; a submitted licence is revalidated against the Exchange's
+  list when the share is queued.
+- If the Exchange cannot be reached when the form loads, the last
+  successfully confirmed licence list is used and the teacher is told it
+  may be out of date.
+- Licence shortnames display in upper case on the catalogue browse page and
+  the resource preview page.
+
 ## [1.0.1] - 2026-07-29
 
 ### Changed
