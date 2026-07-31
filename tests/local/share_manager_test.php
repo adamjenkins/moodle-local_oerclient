@@ -18,6 +18,11 @@ namespace local_oerclient\local;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+require_once($CFG->dirroot . '/local/oerclient/tests/fixtures/stub_exchange_client.php');
+
 /**
  * Tests for share_manager::is_valid_license() — the license re-validation
  * added for MDL Shield audit finding (2026-07-18): share.php's POST handler
@@ -30,18 +35,29 @@ use PHPUnit\Framework\Attributes\CoversClass;
  */
 #[CoversClass(share_manager::class)]
 final class share_manager_test extends \advanced_testcase {
-    public function test_a_real_core_license_shortname_is_valid(): void {
+    public function test_a_licence_the_exchange_accepts_is_valid(): void {
         $this->resetAfterTest();
+        set_config('exchangeurl', 'https://exchange.invalid', 'local_oerclient');
+        set_config('sitetoken', 'abc123', 'local_oerclient');
 
-        // The 'unknown' license is core's own always-present fallback.
-        $this->assertTrue(share_manager::is_valid_license('unknown'));
+        $stub = new stub_exchange_client('https://exchange.invalid');
+        $stub->response = ['acceptedlicenses' => 'cc-sa-4.0,cc-4.0'];
+
+        $this->assertTrue(share_manager::is_valid_license('cc-sa-4.0', $stub));
     }
 
-    public function test_an_arbitrary_client_supplied_string_is_not_valid(): void {
+    public function test_a_core_licence_the_exchange_does_not_accept_is_refused(): void {
         $this->resetAfterTest();
+        set_config('exchangeurl', 'https://exchange.invalid', 'local_oerclient');
+        set_config('sitetoken', 'abc123', 'local_oerclient');
 
-        $this->assertFalse(share_manager::is_valid_license('<script>alert(1)</script>'));
-        $this->assertFalse(share_manager::is_valid_license('not-a-real-license'));
-        $this->assertFalse(share_manager::is_valid_license(''));
+        $stub = new stub_exchange_client('https://exchange.invalid');
+        $stub->response = ['acceptedlicenses' => 'cc-sa-4.0'];
+
+        // 'unknown' is core's own always-present licence — being real on this
+        // site is exactly what no longer makes a licence acceptable.
+        $this->assertFalse(share_manager::is_valid_license('unknown', $stub));
+        $this->assertFalse(share_manager::is_valid_license('<script>alert(1)</script>', $stub));
+        $this->assertFalse(share_manager::is_valid_license('', $stub));
     }
 }

@@ -26,30 +26,22 @@ namespace local_oerclient\local;
  */
 class share_manager {
     /**
-     * share.php's form builds its license <select> from
-     * \license_manager::get_licenses(), but the POST handler previously
-     * stored whatever 'licenseshortname' string the client submitted without
-     * checking it was actually one of the offered options — the same
-     * un-revalidated-select-value pattern MDL Shield flagged in
-     * mod_confcheckin's paymentaccountid (2026-07-18 audit, class 1).
-     * A share with a spoofed license string is misinformation once published
-     * to the Exchange catalogue, so re-validate here against the same menu
-     * the form was built from.
+     * Whether a submitted licence is one the Exchange actually accepts.
+     *
+     * The form's <select> is built from the Exchange's list, and a submitted
+     * value must be re-checked against that same list rather than trusted —
+     * the un-revalidated-select-value pattern MDL Shield flagged in 2026-07-18.
+     * What changed in 1.0.2 is the authority, not the check: being a licence
+     * this site knows no longer makes a licence acceptable, because the
+     * Exchange refuses anything off its own list at publish time and a share
+     * that fails there fails late, on share_status.php.
      *
      * @param string $licenseshortname
-     * @return bool true iff $licenseshortname is one of the licenses core offers
+     * @param exchange_client|null $client injected by tests
+     * @return bool
      */
-    public static function is_valid_license(string $licenseshortname): bool {
-        global $CFG;
-        require_once($CFG->libdir . '/licenselib.php');
-
-        foreach (\license_manager::get_licenses() as $license) {
-            if ($license->shortname === $licenseshortname) {
-                return true;
-            }
-        }
-
-        return false;
+    public static function is_valid_license(string $licenseshortname, ?exchange_client $client = null): bool {
+        return allowed_licenses::is_allowed($licenseshortname, $client);
     }
 
     /**
