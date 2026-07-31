@@ -120,7 +120,11 @@ if (!empty($resource['creatorname'])) {
     }
     echo html_writer::tag('p', get_string('createdby', 'local_oerclient', $creatorlabel));
 }
-echo html_writer::tag('p', get_string('licenselabel', 'local_oerclient', s($resource['licenseshortname'])));
+echo html_writer::tag('p', get_string(
+    'licenselabel',
+    'local_oerclient',
+    s(\core_text::strtoupper($resource['licenseshortname']))
+));
 echo html_writer::tag('div', format_text($resource['summary'] ?? '', FORMAT_PLAIN), ['class' => 'mb-3']);
 
 $requiredplugins = json_decode($resource['requiredplugins'] ?? '[]', true) ?: [];
