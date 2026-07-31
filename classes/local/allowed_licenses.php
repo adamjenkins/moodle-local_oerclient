@@ -141,9 +141,17 @@ class allowed_licenses {
         $known = \license_manager::get_licenses();
         $menu = [];
         foreach ($shortnames as $shortname) {
+            // Escaping is asymmetric here, deliberately. A known licence's
+            // fullname is already safe — core licences come from get_string()
+            // and custom ones through format_string() — so escaping it again
+            // would double-escape. The fallback is the raw shortname the
+            // Exchange sent, which has been through nothing but explode(), and
+            // html_writer::select() does NOT escape option label text (it
+            // escapes optgroup labels only — lib/classes/output/html_writer.php).
+            // So the fallback, and only the fallback, is escaped here.
             $menu[$shortname] = isset($known[$shortname])
                 ? $known[$shortname]->fullname
-                : $shortname;
+                : s($shortname);
         }
 
         return $menu;

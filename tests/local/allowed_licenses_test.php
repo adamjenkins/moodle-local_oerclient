@@ -164,6 +164,21 @@ final class allowed_licenses_test extends \advanced_testcase {
         $this->assertSame(['school-internal-1.0' => 'school-internal-1.0'], $menu);
     }
 
+    public function test_an_unknown_shortname_is_escaped_before_it_reaches_the_page(): void {
+        $this->resetAfterTest();
+
+        // The html_writer::select() method does not escape option label text,
+        // and this value comes from the Exchange — so menu() must not hand it
+        // over raw.
+        $menu = allowed_licenses::menu(['<script>alert(1)</script>']);
+
+        $this->assertSame(
+            ['<script>alert(1)</script>' => s('<script>alert(1)</script>')],
+            $menu
+        );
+        $this->assertStringNotContainsString('<script>', reset($menu));
+    }
+
     public function test_the_menu_keeps_the_exchanges_order(): void {
         $this->resetAfterTest();
 
