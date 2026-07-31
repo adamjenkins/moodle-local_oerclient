@@ -132,4 +132,71 @@ final class allowed_licenses_test extends \advanced_testcase {
         $this->assertSame([], $state['shortnames']);
         $this->assertNull($state['confirmed']);
     }
+
+    public function test_the_menu_names_licences_using_core_strings(): void {
+        $this->resetAfterTest();
+
+        $menu = allowed_licenses::menu(['cc-sa-4.0']);
+
+        $this->assertArrayHasKey('cc-sa-4.0', $menu);
+        $this->assertSame(get_string('cc-sa-4.0', 'core_license'), $menu['cc-sa-4.0']);
+    }
+
+    public function test_a_licence_disabled_on_this_site_is_still_offered(): void {
+        $this->resetAfterTest();
+        global $CFG;
+
+        // Enable only 'unknown' locally: the Exchange's choice must win.
+        $CFG->licenses = 'unknown';
+        \license_manager::reset_license_cache();
+
+        $menu = allowed_licenses::menu(['cc-nd-4.0']);
+
+        $this->assertArrayHasKey('cc-nd-4.0', $menu);
+        $this->assertSame(get_string('cc-nd-4.0', 'core_license'), $menu['cc-nd-4.0']);
+    }
+
+    public function test_a_shortname_this_site_does_not_know_shows_as_itself(): void {
+        $this->resetAfterTest();
+
+        $menu = allowed_licenses::menu(['school-internal-1.0']);
+
+        $this->assertSame(['school-internal-1.0' => 'school-internal-1.0'], $menu);
+    }
+
+    public function test_the_menu_keeps_the_exchanges_order(): void {
+        $this->resetAfterTest();
+
+        $menu = allowed_licenses::menu(['cc-nd-4.0', 'cc-4.0', 'cc-sa-4.0']);
+
+        $this->assertSame(['cc-nd-4.0', 'cc-4.0', 'cc-sa-4.0'], array_keys($menu));
+    }
+
+    public function test_sharealike_is_preselected_when_allowed(): void {
+        $this->resetAfterTest();
+
+        $this->assertSame(
+            'cc-sa-4.0',
+            allowed_licenses::default_shortname(['cc-4.0', 'cc-sa-4.0', 'cc-nd-4.0'])
+        );
+    }
+
+    public function test_the_first_allowed_licence_is_preselected_otherwise(): void {
+        $this->resetAfterTest();
+
+        $this->assertSame('cc-nc-4.0', allowed_licenses::default_shortname(['cc-nc-4.0', 'cc-nd-4.0']));
+        $this->assertNull(allowed_licenses::default_shortname([]));
+    }
+
+    public function test_only_a_licence_the_exchange_allows_validates(): void {
+        $this->resetAfterTest();
+        $this->register();
+
+        $stub = $this->stub('cc-sa-4.0');
+
+        $this->assertTrue(allowed_licenses::is_allowed('cc-sa-4.0', $stub));
+        $this->assertFalse(allowed_licenses::is_allowed('cc-4.0', $stub));
+        $this->assertFalse(allowed_licenses::is_allowed('unknown', $stub));
+        $this->assertFalse(allowed_licenses::is_allowed('', $stub));
+    }
 }

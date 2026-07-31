@@ -121,4 +121,64 @@ class allowed_licenses {
     protected static function split(string $raw): array {
         return array_values(array_filter(array_map('trim', explode(',', $raw)), 'strlen'));
     }
+
+    /**
+     * Display names for the Exchange's shortnames, in the Exchange's order.
+     *
+     * This site's licence manager is consulted for NAMES ONLY, never to
+     * filter: whether a licence may be used is the Exchange's decision, so a
+     * licence disabled here is still offered if the Exchange allows it. A
+     * shortname this site has never heard of displays as itself rather than
+     * being dropped, so the list always matches what the Exchange sent.
+     *
+     * @param string[] $shortnames
+     * @return array shortname => display name
+     */
+    public static function menu(array $shortnames): array {
+        global $CFG;
+        require_once($CFG->libdir . '/licenselib.php');
+
+        $known = \license_manager::get_licenses();
+        $menu = [];
+        foreach ($shortnames as $shortname) {
+            $menu[$shortname] = isset($known[$shortname])
+                ? $known[$shortname]->fullname
+                : $shortname;
+        }
+
+        return $menu;
+    }
+
+    /**
+     * Which licence the share form preselects.
+     *
+     * ShareAlike keeps derivatives shareable, which is the platform's whole
+     * point, so it wins whenever the Exchange allows it; otherwise the
+     * Exchange's own first choice does.
+     *
+     * @param string[] $shortnames
+     * @return string|null null when the Exchange allows nothing
+     */
+    public static function default_shortname(array $shortnames): ?string {
+        if (in_array(self::PREFERRED_DEFAULT, $shortnames, true)) {
+            return self::PREFERRED_DEFAULT;
+        }
+
+        return $shortnames[0] ?? null;
+    }
+
+    /**
+     * Whether the Exchange currently allows a shortname to be used.
+     *
+     * @param string $shortname
+     * @param exchange_client|null $client injected by tests
+     * @return bool
+     */
+    public static function is_allowed(string $shortname, ?exchange_client $client = null): bool {
+        if ($shortname === '') {
+            return false;
+        }
+
+        return in_array($shortname, self::state($client)['shortnames'], true);
+    }
 }
