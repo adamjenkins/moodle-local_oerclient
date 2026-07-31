@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_oerclient';
-$plugin->version   = 2026073100;
+$plugin->version   = 2026073101;
 // 2025041400 = the Moodle 5.0 branching version. The previous value
 // (2024100700) was Moodle 4.5 while its comment claimed 5.0 — and this
 // plugin hard-depends on core\navigation\navigation_node, which only exists

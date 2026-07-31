@@ -15,5 +15,8 @@ The Exchange is now the sole authority on which licences a share may use.
 - Licence shortnames (for example `CC-SA-4.0`) now display in upper case on
   the catalogue browse page and the resource preview page, matching how
   they are written everywhere else.
+- A handful of displayed strings ("License" → "Licence") now use
+  International English spelling, matching Moodle core's own convention for
+  user-facing prose. No string keys or Japanese strings changed.
 
 No database or capability changes. No action is required after upgrading.

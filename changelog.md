@@ -16,6 +16,8 @@ All notable changes to this project are documented in this file, in
   may be out of date.
 - Licence shortnames display in upper case on the catalogue browse page and
   the resource preview page.
+- International English spelling ("License" → "Licence") corrected in a
+  handful of displayed strings.
 
 ## [1.0.1] - 2026-07-29
 
