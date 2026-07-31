@@ -35,6 +35,8 @@ class stub_exchange_client extends exchange_client {
     public int $calls = 0;
 
     /**
+     * Records the call and returns the canned response, or throws if $fail.
+     *
      * @param string $function
      * @param array $params
      * @param string $token

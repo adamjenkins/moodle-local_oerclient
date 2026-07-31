@@ -87,6 +87,8 @@ class allowed_licenses {
     }
 
     /**
+     * Assembles the state array returned by state().
+     *
      * @param string[] $shortnames
      * @param int|null $confirmed
      * @param bool $live
@@ -97,6 +99,8 @@ class allowed_licenses {
     }
 
     /**
+     * Splits a stored/response comma-separated shortname string into a list.
+     *
      * @param string $raw comma-separated shortnames
      * @return string[]
      */

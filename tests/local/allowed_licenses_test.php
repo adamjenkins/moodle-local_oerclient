@@ -45,6 +45,8 @@ final class allowed_licenses_test extends \advanced_testcase {
     }
 
     /**
+     * Builds a stub that answers with the given accepted-licences string.
+     *
      * @param string $accepted
      * @return stub_exchange_client
      */
