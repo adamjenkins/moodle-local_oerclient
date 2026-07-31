@@ -90,6 +90,7 @@ final class allowed_licenses_test extends \advanced_testcase {
         $stub = $this->stub('');
         $stub->fail = true;
         $state = allowed_licenses::state($stub);
+        $this->assertDebuggingCalled();
 
         $this->assertSame(['cc-sa-4.0'], $state['shortnames']);
         $this->assertFalse($state['live']);
@@ -103,6 +104,7 @@ final class allowed_licenses_test extends \advanced_testcase {
         $stub = $this->stub('');
         $stub->fail = true;
         $state = allowed_licenses::state($stub);
+        $this->assertDebuggingCalled();
 
         $this->assertSame([], $state['shortnames']);
         $this->assertNull($state['confirmed']);

@@ -51,9 +51,8 @@ class allowed_licenses {
     public static function state(?exchange_client $client = null): array {
         $stored = get_config('local_oerclient', 'acceptedlicenses');
         $confirmed = (int) get_config('local_oerclient', 'acceptedlicensestime');
-        $hasstored = $stored !== false;
 
-        if ($hasstored && $confirmed > 0 && (time() - $confirmed) < self::CACHE_TTL) {
+        if ($stored !== false && $confirmed > 0 && (time() - $confirmed) < self::CACHE_TTL) {
             return self::result(self::split($stored), $confirmed, true);
         }
 
@@ -62,11 +61,7 @@ class allowed_licenses {
         if ($exchangeurl === '' || $sitetoken === '') {
             // Not registered: there is nobody to ask. Serve whatever was
             // stored before the site was unregistered, if anything.
-            return self::result(
-                $hasstored ? self::split($stored) : [],
-                $hasstored ? $confirmed : null,
-                false
-            );
+            return self::fallback($stored, $confirmed);
         }
 
         $client = $client ?? new exchange_client($exchangeurl);
@@ -77,12 +72,18 @@ class allowed_licenses {
             set_config('acceptedlicenses', $raw, 'local_oerclient');
             set_config('acceptedlicensestime', $now, 'local_oerclient');
             return self::result(self::split($raw), $now, true);
-        } catch (\Throwable $e) {
-            return self::result(
-                $hasstored ? self::split($stored) : [],
-                $hasstored ? $confirmed : null,
-                false
+        } catch (\moodle_exception $e) {
+            // Deliberately NOT \Throwable. exchange_client::safe_request()
+            // normalises every transport failure to a moodle_exception, so
+            // that is the whole of "the Exchange could not be reached".
+            // Catching more would reinterpret a genuine bug in this method —
+            // a TypeError on a malformed response shape, say — as an outage,
+            // and quietly serve a stale list instead of surfacing it.
+            debugging(
+                'local_oerclient: could not refresh the accepted licence list: ' . $e->getMessage(),
+                DEBUG_NORMAL
             );
+            return self::fallback($stored, $confirmed);
         }
     }
 
@@ -96,6 +97,19 @@ class allowed_licenses {
      */
     protected static function result(array $shortnames, ?int $confirmed, bool $live): array {
         return ['shortnames' => $shortnames, 'confirmed' => $confirmed ?: null, 'live' => $live];
+    }
+
+    /**
+     * The result to serve when the Exchange could not be asked.
+     *
+     * @param string|false $stored raw stored value; false when never fetched
+     * @param int $confirmed stored timestamp, 0 when never fetched
+     * @return array{shortnames: string[], confirmed: int|null, live: bool}
+     */
+    protected static function fallback($stored, int $confirmed): array {
+        return $stored === false
+            ? self::result([], null, false)
+            : self::result(self::split($stored), $confirmed, false);
     }
 
     /**
