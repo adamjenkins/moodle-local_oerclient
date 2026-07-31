@@ -54,7 +54,7 @@ final class share_manager_test extends \advanced_testcase {
         $stub = new stub_exchange_client('https://exchange.invalid');
         $stub->response = ['acceptedlicenses' => 'cc-sa-4.0'];
 
-        // 'unknown' is core's own always-present licence — being real on this
+        // Core's own always-present 'unknown' licence: being real on this
         // site is exactly what no longer makes a licence acceptable.
         $this->assertFalse(share_manager::is_valid_license('unknown', $stub));
         $this->assertFalse(share_manager::is_valid_license('<script>alert(1)</script>', $stub));
