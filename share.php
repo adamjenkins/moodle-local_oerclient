@@ -23,7 +23,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use local_oerclient\local\share_manager;
+use local_oerclient\local\allowed_licenses;
 
 require(__DIR__ . '/../../config.php');
 require_login();
@@ -61,14 +61,14 @@ if (data_submitted() && confirm_sesskey() && optional_param('dosubmit', 0, PARAM
         $activitytype = $cm->modname;
     }
 
-    $licencestate = \local_oerclient\local\allowed_licenses::state();
+    $licencestate = allowed_licenses::state();
     if (!$licencestate['shortnames']) {
         // No list at all: never reached the Exchange, or it accepts nothing.
         // Either way this is not "your licence is invalid" — say which it is.
         throw new moodle_exception(
             $licencestate['confirmed'] === null
-                ? 'error_licencesunavailable'
-                : 'error_nolicencesaccepted',
+                ? 'error_licensesunavailable'
+                : 'error_nolicensesaccepted',
             'local_oerclient'
         );
     }
@@ -76,8 +76,12 @@ if (data_submitted() && confirm_sesskey() && optional_param('dosubmit', 0, PARAM
     // Re-validate against the same menu the <select> below was built from —
     // required_param() alone only confirms it's a string, not that it's one
     // of the licenses actually offered (MDL Shield audit finding, 2026-07-18).
+    // Validated against the state already fetched above, not a fresh
+    // share_manager::is_valid_license() call: on the failure path nothing is
+    // written to config, so a second call would re-attempt the Exchange
+    // request — worst case two timeouts on one form submit.
     $licenseshortname = required_param('licenseshortname', PARAM_TEXT);
-    if (!share_manager::is_valid_license($licenseshortname)) {
+    if (!in_array($licenseshortname, $licencestate['shortnames'], true)) {
         throw new moodle_exception('error_invalidlicense', 'local_oerclient');
     }
 
@@ -113,14 +117,14 @@ if (data_submitted() && confirm_sesskey() && optional_param('dosubmit', 0, PARAM
 
 echo $OUTPUT->header();
 
-$licencestate = \local_oerclient\local\allowed_licenses::state();
+$licencestate = allowed_licenses::state();
 if (!$licencestate['shortnames']) {
     // Nothing may be chosen: either this site has never reached the Exchange
     // (connectivity) or the Exchange accepts no licence at all (deliberate
     // configuration). They are different problems and get different messages.
     $message = $licencestate['confirmed'] === null
-        ? get_string('error_licencesunavailable', 'local_oerclient')
-        : get_string('error_nolicencesaccepted', 'local_oerclient');
+        ? get_string('error_licensesunavailable', 'local_oerclient')
+        : get_string('error_nolicensesaccepted', 'local_oerclient');
     echo $OUTPUT->notification($message, 'error');
     echo $OUTPUT->footer();
     exit;
@@ -128,7 +132,7 @@ if (!$licencestate['shortnames']) {
 
 if (!$licencestate['live']) {
     echo $OUTPUT->notification(
-        get_string('licenceliststale', 'local_oerclient', userdate($licencestate['confirmed'])),
+        get_string('licenseliststale', 'local_oerclient', userdate($licencestate['confirmed'])),
         'info'
     );
 }
@@ -184,9 +188,9 @@ echo html_writer::tag(
     ['for' => 'oerclient-share-license']
 );
 echo html_writer::select(
-    \local_oerclient\local\allowed_licenses::menu($licencestate['shortnames']),
+    allowed_licenses::menu($licencestate['shortnames']),
     'licenseshortname',
-    \local_oerclient\local\allowed_licenses::default_shortname($licencestate['shortnames']),
+    allowed_licenses::default_shortname($licencestate['shortnames']),
     false,
     ['id' => 'oerclient-share-license', 'class' => 'form-select mb-2']
 );

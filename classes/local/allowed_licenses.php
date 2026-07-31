@@ -67,7 +67,19 @@ class allowed_licenses {
         $client = $client ?? new exchange_client($exchangeurl);
         try {
             $response = $client->call('local_oerexchange_get_config', [], $sitetoken);
-            $raw = (string) ($response['acceptedlicenses'] ?? '');
+            if (!array_key_exists('acceptedlicenses', $response)) {
+                // No answer is not the same as "no licences". Persisting this
+                // would overwrite last-known-good and tell the teacher the
+                // Exchange's admin has allowed nothing — when the real cause is
+                // an Exchange too old to carry the field, or a 2xx body that is
+                // not the response we asked for.
+                debugging(
+                    'local_oerclient: the Exchange gave no accepted-licence list',
+                    DEBUG_NORMAL
+                );
+                return self::fallback($stored, $confirmed);
+            }
+            $raw = (string) $response['acceptedlicenses'];
             $now = time();
             set_config('acceptedlicenses', $raw, 'local_oerclient');
             set_config('acceptedlicensestime', $now, 'local_oerclient');
@@ -107,9 +119,16 @@ class allowed_licenses {
      * @return array{shortnames: string[], confirmed: int|null, live: bool}
      */
     protected static function fallback($stored, int $confirmed): array {
-        return $stored === false
-            ? self::result([], null, false)
-            : self::result(self::split($stored), $confirmed, false);
+        if ($stored === false || $confirmed <= 0) {
+            // A non-positive confirmed time means this site has never had a
+            // genuine answer — even if a shortname list happens to be
+            // stored — so state()'s own contract (confirmed === null means
+            // never confirmed) must hold rather than serving a "confirmed"
+            // list with no confirmation time behind it.
+            return self::result([], null, false);
+        }
+
+        return self::result(self::split($stored), $confirmed, false);
     }
 
     /**

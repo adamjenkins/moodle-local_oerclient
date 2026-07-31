@@ -63,8 +63,16 @@ affected).
    - **Title** — prefilled from the course/activity name; edit as needed.
    - **Summary** — describe what it's for and who it's aimed at.
    - **Language**, **tags** — help other teachers find it.
-   - **License** — a Creative Commons license (or public domain);
-     required.
+   - **License** — required; choose from the licenses the Exchange
+     currently accepts. This is not a fixed list: it is decided entirely by
+     the Exchange's own administrator and can change at any time, so which
+     licenses appear here and on the Exchange itself always match. If the
+     Exchange cannot be reached, or its administrator has not (yet) allowed
+     any license, a message explains why and there is nothing to choose —
+     see Troubleshooting below. If your site could not reach the Exchange
+     just now but has a previously-confirmed list to fall back on, you'll
+     see an information notice naming when that list was last confirmed;
+     your share is still queued normally.
 3. Click **Share it**. This is not instant — behind the scenes, your site
    builds a sanitized backup (with **no student or personal data included**,
    regardless of what the course itself contains) and uploads it to the
@@ -142,6 +150,20 @@ sanitizes, the Exchange checks again).
 - **Share failed** — the status page shows the error. Common causes: you
   haven't linked your Exchange account yet, or the backup exceeded the
   Exchange's maximum accepted size.
+- **"Cannot reach the OER Exchange, so the licenses it accepts are
+  unknown"** — this site has never successfully asked the Exchange which
+  licenses it accepts, and there's nothing to fall back on. This is a
+  connectivity or configuration problem (check that this site is
+  registered and approved — see above), not something to do with any
+  particular course.
+- **"The OER Exchange is not currently accepting any license"** — the
+  Exchange answered, but its administrator currently allows no license at
+  all, so sharing is closed until they allow at least one. Contact the
+  Exchange's administrator, not your own site administrator.
+- **An information notice above the license field, naming when the list
+  was "last confirmed"** — your site could not reach the Exchange just
+  now, but is using the list it confirmed earlier so you can keep working.
+  This is informational only; your share is still queued normally.
 - **Import button is missing or disabled** — for single activities, you
   need import rights in at least one course; if none are listed, ask your
   administrator for access to an appropriate course.

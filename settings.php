@@ -41,13 +41,17 @@ if ($hassiteconfig) {
         get_string('settingsheading_desc', 'local_oerclient')
     ));
 
-    $settings->add(new admin_setting_configtext(
+    $exchangeurlsetting = new admin_setting_configtext(
         'local_oerclient/exchangeurl',
         get_string('settings_exchangeurl', 'local_oerclient'),
         get_string('settings_exchangeurl_desc', 'local_oerclient'),
         '',
         PARAM_URL
-    ));
+    );
+    // Repointing this site at a different Exchange must not go on serving
+    // the previous Exchange's cached accepted-licence list.
+    $exchangeurlsetting->set_updatedcallback('local_oerclient_licensecache_updated_callback');
+    $settings->add($exchangeurlsetting);
 
     $settings->add(new admin_setting_configtext(
         'local_oerclient/siteid',
@@ -57,12 +61,14 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
-    $settings->add(new admin_setting_configpasswordunmask(
+    $sitetokensetting = new admin_setting_configpasswordunmask(
         'local_oerclient/sitetoken',
         get_string('settings_sitetoken', 'local_oerclient'),
         get_string('settings_sitetoken_desc', 'local_oerclient'),
         ''
-    ));
+    );
+    $sitetokensetting->set_updatedcallback('local_oerclient_licensecache_updated_callback');
+    $settings->add($sitetokensetting);
 
     $settings->add(new admin_setting_configcheckbox(
         'local_oerclient/acceptinvalidcerts',

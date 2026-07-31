@@ -72,3 +72,18 @@ function local_oerclient_extend_settings_navigation(settings_navigation $setting
         'oerclientshareactivity'
     );
 }
+
+/**
+ * Invalidates the cached accepted-licence list (settings.php callback).
+ *
+ * Wired to both 'exchangeurl' and 'sitetoken' so that repointing this site
+ * at a different Exchange never serves the previous Exchange's list — not
+ * for up to CACHE_TTL seconds, and not indefinitely as last-known-good if
+ * the new Exchange turns out to be unreachable. The shortname list itself
+ * ('acceptedlicenses') is deliberately left in place: clearing only the
+ * timestamp forces allowed_licenses::state() to re-fetch on the very next
+ * call, while still leaving something to fall back to if that fetch fails.
+ */
+function local_oerclient_licensecache_updated_callback(): void {
+    unset_config('acceptedlicensestime', 'local_oerclient');
+}

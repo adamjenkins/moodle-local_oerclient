@@ -122,6 +122,46 @@ final class allowed_licenses_test extends \advanced_testcase {
         $this->assertTrue($state['live']);
     }
 
+    public function test_a_response_with_no_accepted_licences_key_falls_back_and_does_not_overwrite(): void {
+        $this->resetAfterTest();
+        $this->register();
+        set_config('acceptedlicenses', 'cc-sa-4.0', 'local_oerclient');
+        set_config('acceptedlicensestime', time() - (allowed_licenses::CACHE_TTL + 60), 'local_oerclient');
+
+        // An Exchange too old to carry 'acceptedlicenses' (added in v1.0.0),
+        // or a 2xx body that is not the response asked for, both look like
+        // this: a decoded response with no such key. It must not be read as
+        // "the Exchange accepts nothing".
+        $stub = new stub_exchange_client('https://exchange.invalid');
+        $stub->response = ['maxbackupbytes' => 1];
+        $state = allowed_licenses::state($stub);
+        $this->assertDebuggingCalled();
+
+        $this->assertSame(['cc-sa-4.0'], $state['shortnames']);
+        $this->assertFalse($state['live']);
+        $this->assertNotNull($state['confirmed']);
+        $this->assertSame('cc-sa-4.0', get_config('local_oerclient', 'acceptedlicenses'));
+    }
+
+    public function test_a_stored_list_with_no_confirmation_time_is_never_confirmed(): void {
+        $this->resetAfterTest();
+        $this->register();
+        // Reachable via the documented cache-bust: unset_config()'ing only
+        // the timestamp leaves a stored shortname list behind with
+        // acceptedlicensestime absent (0), which must not read as confirmed.
+        set_config('acceptedlicenses', 'cc-sa-4.0', 'local_oerclient');
+        unset_config('acceptedlicensestime', 'local_oerclient');
+
+        $stub = $this->stub('');
+        $stub->fail = true;
+        $state = allowed_licenses::state($stub);
+        $this->assertDebuggingCalled();
+
+        $this->assertSame([], $state['shortnames']);
+        $this->assertNull($state['confirmed']);
+        $this->assertFalse($state['live']);
+    }
+
     public function test_an_unregistered_site_is_never_asked(): void {
         $this->resetAfterTest();
 

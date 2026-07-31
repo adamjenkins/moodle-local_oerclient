@@ -40,6 +40,7 @@ use PHPUnit\Framework\Attributes\CoversFunction;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 #[CoversFunction('local_oerclient_extend_settings_navigation')]
+#[CoversFunction('local_oerclient_licensecache_updated_callback')]
 final class lib_test extends \advanced_testcase {
     public function test_adds_the_share_node_on_a_real_activity_page_for_an_editing_teacher(): void {
         global $PAGE;
@@ -103,5 +104,22 @@ final class lib_test extends \advanced_testcase {
 
         $node = $settingsnav->find('oerclientshareactivity', \settings_navigation::TYPE_SETTING);
         $this->assertFalse($node, 'the activity-specific node must not appear on a course page');
+    }
+
+    public function test_the_licensecache_callback_clears_only_the_confirmation_time(): void {
+        $this->resetAfterTest();
+        set_config('acceptedlicenses', 'cc-sa-4.0', 'local_oerclient');
+        set_config('acceptedlicensestime', time(), 'local_oerclient');
+
+        // Wired to settings.php's exchangeurl/sitetoken via
+        // set_updatedcallback(), so repointing this site at a different
+        // Exchange never goes on serving the previous Exchange's cached
+        // list. Only the timestamp is cleared: state() then re-fetches on
+        // its very next call, while a stored list still exists to fall back
+        // to if that fetch fails.
+        \local_oerclient_licensecache_updated_callback();
+
+        $this->assertSame('cc-sa-4.0', get_config('local_oerclient', 'acceptedlicenses'));
+        $this->assertFalse(get_config('local_oerclient', 'acceptedlicensestime'));
     }
 }
