@@ -101,8 +101,25 @@ if (data_submitted() && confirm_sesskey() && optional_param('dosubmit', 0, PARAM
 
 echo $OUTPUT->header();
 
-require_once($CFG->libdir . '/licenselib.php');
-$licenses = \license_manager::get_licenses();
+$licencestate = \local_oerclient\local\allowed_licenses::state();
+if (!$licencestate['shortnames']) {
+    // Nothing may be chosen: either this site has never reached the Exchange
+    // (connectivity) or the Exchange accepts no licence at all (deliberate
+    // configuration). They are different problems and get different messages.
+    $message = $licencestate['confirmed'] === null
+        ? get_string('error_licencesunavailable', 'local_oerclient')
+        : get_string('error_nolicencesaccepted', 'local_oerclient');
+    echo $OUTPUT->notification($message, 'error');
+    echo $OUTPUT->footer();
+    exit;
+}
+
+if (!$licencestate['live']) {
+    echo $OUTPUT->notification(
+        get_string('licenceliststale', 'local_oerclient', userdate($licencestate['confirmed'])),
+        'info'
+    );
+}
 
 echo html_writer::start_tag('form', [
     'method' => 'post',
@@ -149,12 +166,18 @@ echo html_writer::empty_tag('input', [
     'type' => 'text', 'name' => 'tags', 'id' => 'oerclient-share-tags', 'class' => 'form-control mb-2',
 ]);
 
-echo html_writer::tag('label', get_string('sharelicenselabel', 'local_oerclient'), ['for' => 'oerclient-share-license']);
-$licenseoptions = [];
-foreach ($licenses as $license) {
-    $licenseoptions[$license->shortname] = $license->fullname;
-}
-echo html_writer::select($licenseoptions, 'licenseshortname', 'cc-4.0', false, ['class' => 'form-select mb-2']);
+echo html_writer::tag(
+    'label',
+    get_string('sharelicenselabel', 'local_oerclient'),
+    ['for' => 'oerclient-share-license']
+);
+echo html_writer::select(
+    \local_oerclient\local\allowed_licenses::menu($licencestate['shortnames']),
+    'licenseshortname',
+    \local_oerclient\local\allowed_licenses::default_shortname($licencestate['shortnames']),
+    false,
+    ['id' => 'oerclient-share-license', 'class' => 'form-select mb-2']
+);
 
 echo html_writer::empty_tag('input', [
     'type' => 'submit', 'value' => get_string('sharesubmit', 'local_oerclient'), 'class' => 'btn btn-primary',
