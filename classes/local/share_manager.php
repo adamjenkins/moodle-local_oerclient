@@ -26,25 +26,6 @@ namespace local_oerclient\local;
  */
 class share_manager {
     /**
-     * Whether a submitted licence is one the Exchange actually accepts.
-     *
-     * The form's <select> is built from the Exchange's list, and a submitted
-     * value must be re-checked against that same list rather than trusted —
-     * the un-revalidated-select-value pattern MDL Shield flagged in 2026-07-18.
-     * What changed in 1.0.2 is the authority, not the check: being a licence
-     * this site knows no longer makes a licence acceptable, because the
-     * Exchange refuses anything off its own list at publish time and a share
-     * that fails there fails late, on share_status.php.
-     *
-     * @param string $licenseshortname
-     * @param exchange_client|null $client injected by tests
-     * @return bool
-     */
-    public static function is_valid_license(string $licenseshortname, ?exchange_client $client = null): bool {
-        return allowed_licenses::is_allowed($licenseshortname, $client);
-    }
-
-    /**
      * Whether the course (and, for an activity share, the activity) this share
      * was made from still exists on this site.
      *

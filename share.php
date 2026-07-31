@@ -76,8 +76,8 @@ if (data_submitted() && confirm_sesskey() && optional_param('dosubmit', 0, PARAM
     // Re-validate against the same menu the <select> below was built from —
     // required_param() alone only confirms it's a string, not that it's one
     // of the licenses actually offered (MDL Shield audit finding, 2026-07-18).
-    // Validated against the state already fetched above, not a fresh
-    // share_manager::is_valid_license() call: on the failure path nothing is
+    // Checked against the state already fetched above, not a fresh
+    // allowed_licenses::is_allowed() call: on the failure path nothing is
     // written to config, so a second call would re-attempt the Exchange
     // request — worst case two timeouts on one form submit.
     $licenseshortname = required_param('licenseshortname', PARAM_TEXT);
