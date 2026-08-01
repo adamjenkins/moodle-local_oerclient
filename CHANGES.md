@@ -1,36 +1,23 @@
-# Release notes — 1.0.3
+# Release notes — 1.0.4
 
-## Multilingual titles and descriptions now display correctly
+## Licence codes now match the Exchange, and you can choose the style
 
-On the browse and resource-preview pages, a resource whose title or summary
-was written with the multilang filter showed the raw
-`<span lang="en" class="multilang">…</span>` markup as visible text instead of
-the language you are reading in. Those values were HTML-escaped for safety but
-never passed through this site's text filters. Titles, section and activity
-names in the structure preview, and creator names are all filtered now.
+A resource's licence code was shown in capitals here — `CC-SA-4.0` — while the
+Exchange showed the same resource as `cc-sa-4.0`. This plugin was the only one
+in the suite that changed the text, so the two never agreed. The code is now
+displayed exactly as the Exchange sends it, on the browse and resource-preview
+pages and in the Dashboard block.
 
-The resource summary additionally used to be flattened to plain text, so
-nothing in it could be formatted or auto-linked. It now renders as formatted
-content — through Moodle's HTML cleaner, because the text arrives over the
-network from another Moodle site and is treated as untrusted.
+A new setting, **Show licence codes in capitals**, chooses between the two
+styles. It is on by default, so codes still read `CC-SA-4.0` — but the capitals
+are now applied with CSS rather than by rewriting the text. That means text you
+copy from a page matches what the Exchange actually holds, and a screen reader
+reads the code out rather than spelling out capital letters.
 
-**Site requirement:** for titles and other short strings, Moodle only runs the
-multilang filter when that filter is set to apply to *content and headings*
-rather than content alone (Site administration → Plugins → Filters → Manage
-filters). Summaries are filtered either way.
-
-## Security
-
-The "import into course" menu on the resource preview page listed your
-courses' names without escaping them, because Moodle's `html_writer::select()`
-does not escape option labels. A course whose name contained HTML could
-therefore inject markup into that page for anyone who could see the course in
-that menu. Course names are now filtered and escaped like every other name on
-the page.
-
-Links inside a resource summary received from an Exchange now open in a new
-tab with a `noreferrer` relationship, so a link placed by a hostile or
-compromised Exchange cannot see which page on your site the visitor came from.
+If you would rather control this from your theme than with the setting, the
+codes are wrapped in `.oer-licence-name`, and
+`.oer-licence-name--upper { text-transform: unset; }` in your theme's Raw SCSS
+overrides the plugin.
 
 No database changes; no action required after upgrading beyond the usual
 `admin/cli/upgrade.php`.
