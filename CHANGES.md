@@ -1,22 +1,36 @@
-# Release notes — 1.0.2
+# Release notes — 1.0.3
 
-The Exchange is now the sole authority on which licences a share may use.
+## Multilingual titles and descriptions now display correctly
 
-- The "Share to OER Exchange" form's licence field is populated from the
-  list of licences the Exchange currently accepts, instead of this site's
-  own licence configuration.
-- A submitted licence is checked again against the Exchange's list when the
-  share is queued, so a licence the Exchange no longer accepts is rejected
-  even if it was offered a moment earlier.
-- If the Exchange cannot be reached when the form loads, the last
-  successfully confirmed list of licences is used and the teacher is told
-  it may be out of date, rather than the form silently falling back to
-  this site's own licences or failing outright.
-- Licence shortnames (for example `CC-SA-4.0`) now display in upper case on
-  the catalogue browse page and the resource preview page, matching how
-  they are written everywhere else.
-- A handful of displayed strings ("License" → "Licence") now use
-  International English spelling, matching Moodle core's own convention for
-  user-facing prose. No string keys or Japanese strings changed.
+On the browse and resource-preview pages, a resource whose title or summary
+was written with the multilang filter showed the raw
+`<span lang="en" class="multilang">…</span>` markup as visible text instead of
+the language you are reading in. Those values were HTML-escaped for safety but
+never passed through this site's text filters. Titles, section and activity
+names in the structure preview, and creator names are all filtered now.
 
-No database or capability changes. No action is required after upgrading.
+The resource summary additionally used to be flattened to plain text, so
+nothing in it could be formatted or auto-linked. It now renders as formatted
+content — through Moodle's HTML cleaner, because the text arrives over the
+network from another Moodle site and is treated as untrusted.
+
+**Site requirement:** for titles and other short strings, Moodle only runs the
+multilang filter when that filter is set to apply to *content and headings*
+rather than content alone (Site administration → Plugins → Filters → Manage
+filters). Summaries are filtered either way.
+
+## Security
+
+The "import into course" menu on the resource preview page listed your
+courses' names without escaping them, because Moodle's `html_writer::select()`
+does not escape option labels. A course whose name contained HTML could
+therefore inject markup into that page for anyone who could see the course in
+that menu. Course names are now filtered and escaped like every other name on
+the page.
+
+Links inside a resource summary received from an Exchange now open in a new
+tab with a `noreferrer` relationship, so a link placed by a hostile or
+compromised Exchange cannot see which page on your site the visitor came from.
+
+No database changes; no action required after upgrading beyond the usual
+`admin/cli/upgrade.php`.

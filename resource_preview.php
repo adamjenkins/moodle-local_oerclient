@@ -33,8 +33,10 @@ if (isguestuser()) {
 
 $id = required_param('id', PARAM_INT);
 
+$context = context_system::instance();
+
 $PAGE->set_url('/local/oerclient/resource_preview.php', ['id' => $id]);
-$PAGE->set_context(context_system::instance());
+$PAGE->set_context($context);
 $PAGE->set_pagelayout('standard');
 
 $exchangeurl = get_config('local_oerclient', 'exchangeurl');
@@ -64,6 +66,11 @@ try {
     exit;
 }
 
+// Deliberately raw: both of these run the value through format_string()
+// themselves on every supported core (lib/pagelib.php — set_title() calls
+// format_string() then strip_tags(); set_heading()'s $applyformatting
+// parameter defaults to true and calls format_string()). Pre-formatting here
+// would filter the string twice and double-escape any ampersand in it.
 $PAGE->set_title($resource['title']);
 $PAGE->set_heading($resource['title']);
 
@@ -103,15 +110,33 @@ $coverurl = clean_param((string) ($resource['coverimageurl'] ?? ''), PARAM_URL);
 if ($coverurl !== '') {
     echo html_writer::empty_tag('img', [
         'src' => $coverurl,
-        // No s() here: html_writer escapes attribute values itself, so
-        // pre-escaping would double-encode any & or quotes in the title.
-        'alt' => get_string('thumbnailalt', 'local_oerclient', $resource['title']),
+        // Run the title through format_string() so a multilang title
+        // collapses to the viewer's language here too, then decode it back to
+        // plain text: html_writer escapes attribute values itself
+        // (html_writer::attribute() calls s()), so handing it already-escaped
+        // output renders an ampersand as the literal "&amp;". The narrower
+        // format_string(..., 'escape' => false) is not enough — it suppresses
+        // only format_string's own ampersand escaping, not clean_text()'s,
+        // and does nothing for a title stored with pre-encoded entities.
+        'alt' => get_string(
+            'thumbnailalt',
+            'local_oerclient',
+            html_entity_decode(
+                format_string($resource['title'], true, ['context' => $context]),
+                ENT_QUOTES,
+                'UTF-8'
+            )
+        ),
         'class' => 'img-fluid mb-3', 'style' => 'max-height:200px;',
     ]);
 }
 
 if (!empty($resource['creatorname'])) {
-    $creatorlabel = s($resource['creatorname']);
+    // Use format_string(), not s(): a creator name can carry multilang markup,
+    // and format_string() escapes on the way out — re-wrapping it in s()
+    // would double-escape. It lands in link text / element content, which
+    // html_writer does not escape, so no 'escape' => false here.
+    $creatorlabel = format_string($resource['creatorname'], true, ['context' => $context]);
     // PARAM_URL rejects javascript:/data: schemes — html_writer only
     // attribute-escapes, and this URL came from the Exchange.
     $profileurl = clean_param((string) ($resource['creatorprofileurl'] ?? ''), PARAM_URL);
@@ -120,12 +145,38 @@ if (!empty($resource['creatorname'])) {
     }
     echo html_writer::tag('p', get_string('createdby', 'local_oerclient', $creatorlabel));
 }
+// Licence shortname stays s()-escaped, NOT format_string()'d: it is an
+// identifier from the Exchange's accepted-licence list ('cc-sa-4.0'), not
+// authored display text — nobody writes a multilang span in one, and it is
+// upper-cased here precisely because it is read as a code. Matches the
+// Exchange's own resource.php, which also uses s() for it.
 echo html_writer::tag('p', get_string(
     'licenselabel',
     'local_oerclient',
     s(\core_text::strtoupper($resource['licenseshortname']))
 ));
-echo html_writer::tag('div', format_text($resource['summary'] ?? '', FORMAT_PLAIN), ['class' => 'mb-3']);
+// FORMAT_HTML, with cleaning left ON. Two reasons, and they pull the same way:
+// FORMAT_PLAIN s()-escapes before any filter runs (lib/classes/formatting.php),
+// so multilang spans could never collapse and URLs were never auto-linked; and
+// this text arrived over a web service from a REMOTE Exchange site, so it is
+// untrusted and Moodle's HTML purifier must run over it. Never pass
+// 'noclean' => true here. The Exchange stores this column as TYPE="text" with
+// no companion format column and fills it from a client's course summary
+// (HTML), so FORMAT_HTML is also what the real data actually is.
+//
+// 'blanktarget' => true because the purifier permits <a href> and <img src>:
+// stored XSS is blocked, but a hostile or compromised Exchange could still
+// place a link in a summary. Forcing target="_blank" makes core add
+// rel="noreferrer" (lib/weblib.php), so such a link cannot see or reach this
+// site's page. It also keeps the visitor's own session on the client site.
+echo html_writer::tag(
+    'div',
+    format_text($resource['summary'] ?? '', FORMAT_HTML, [
+        'context' => $context,
+        'blanktarget' => true,
+    ]),
+    ['class' => 'mb-3']
+);
 
 $requiredplugins = json_decode($resource['requiredplugins'] ?? '[]', true) ?: [];
 if (!empty($requiredplugins)) {
@@ -133,6 +184,8 @@ if (!empty($requiredplugins)) {
     echo html_writer::start_tag('ul');
     foreach ($requiredplugins as $plugin) {
         $installed = \core_plugin_manager::instance()->get_plugin_info($plugin['type'] . '_' . $plugin['name']) !== null;
+        // A frankenstyle component name ('mod_quiz'), not authored display
+        // text — s(), never format_string().
         $label = $plugin['type'] . '_' . $plugin['name'];
         $badge = $installed
             ? html_writer::tag('span', get_string('plugininstalled', 'local_oerclient'), ['class' => 'badge bg-success ms-2'])
@@ -152,14 +205,24 @@ if ($structure && !empty($structure['sections'])) {
         // Unnamed topics/weekly sections store just the bare section number
         // in the backup XML (Moodle applies "Topic N"/"Week N" only at
         // display time in core, not in the backup) — show that number in a
-        // readable label instead of leaving it as a bare digit.
+        // readable label instead of leaving it as a bare digit. That branch
+        // interpolates a digits-only value into a site-owned lang string, so
+        // it needs neither escaping nor filtering; the real-title branch is
+        // an author's section name and goes through format_string().
         echo ctype_digit((string) $title)
-            ? s(get_string('sectionnumber', 'local_oerclient', $title))
-            : s($title);
+            ? get_string('sectionnumber', 'local_oerclient', $title)
+            : format_string($title, true, ['context' => $context]);
         if (!empty($section['activities'])) {
             echo html_writer::start_tag('ul');
             foreach ($section['activities'] as $activity) {
-                echo html_writer::tag('li', s($activity['modulename']) . ': ' . s($activity['title']));
+                // The modulename value is the module's plugin name from the
+                // backup ('quiz'), so it stays s()-escaped; the title is
+                // the author's text and is filtered.
+                echo html_writer::tag(
+                    'li',
+                    s($activity['modulename']) . ': '
+                        . format_string($activity['title'], true, ['context' => $context])
+                );
             }
             echo html_writer::end_tag('ul');
         }
@@ -203,8 +266,14 @@ if ($resource['type'] === 'data') {
         $courses = enrol_get_users_courses($USER->id, true, null, 'fullname');
         $options = [];
         foreach ($courses as $c) {
-            if (has_capability('local/oerclient:import', context_course::instance($c->id))) {
-                $options[$c->id] = $c->fullname;
+            $coursecontext = context_course::instance($c->id);
+            if (has_capability('local/oerclient:import', $coursecontext)) {
+                // The html_writer::select() helper does NOT escape option
+                // label text (select_option() passes it to html_writer::tag() —
+                // it escapes optgroup labels only), so a raw course fullname
+                // here was both unescaped and unfiltered. format_string()
+                // fixes both, in the course's own context.
+                $options[$c->id] = format_string($c->fullname, true, ['context' => $coursecontext]);
             }
         }
         if (empty($options)) {

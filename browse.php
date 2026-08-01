@@ -35,8 +35,10 @@ $type = optional_param('type', '', PARAM_ALPHA);
 $page = optional_param('page', 0, PARAM_INT);
 $perpage = 20;
 
+$context = context_system::instance();
+
 $PAGE->set_url('/local/oerclient/browse.php', ['q' => $query, 'type' => $type, 'page' => $page]);
-$PAGE->set_context(context_system::instance());
+$PAGE->set_context($context);
 $PAGE->set_pagelayout('standard');
 $PAGE->set_title(get_string('browseexchange', 'local_oerclient'));
 $PAGE->set_heading(get_string('browseexchange', 'local_oerclient'));
@@ -110,9 +112,14 @@ if (empty($result['results'])) {
             ['tabindex' => '-1', 'aria-hidden' => 'true']
         );
         echo html_writer::start_tag('div', ['class' => 'card-body']);
-        echo html_writer::tag('h5', html_writer::link($url, s($r['title'])), ['class' => 'card-title']);
+        // Use format_string(), not s(): titles and names carry multilang markup,
+        // and format_string() escapes on the way out — never re-wrap it in
+        // s(). Both land in element content, which html_writer does not
+        // escape, so the 'escape' option stays at its default here.
+        $title = format_string($r['title'], true, ['context' => $context]);
+        echo html_writer::tag('h5', html_writer::link($url, $title), ['class' => 'card-title']);
         if (!empty($r['creatorname'])) {
-            $creatorlabel = s($r['creatorname']);
+            $creatorlabel = format_string($r['creatorname'], true, ['context' => $context]);
             // PARAM_URL rejects javascript:/data: schemes — html_writer
             // only attribute-escapes, and this URL came from the Exchange.
             $profileurl = clean_param((string) ($r['creatorprofileurl'] ?? ''), PARAM_URL);
@@ -125,7 +132,21 @@ if (empty($result['results'])) {
                 ['class' => 'small text-muted']
             );
         }
-        echo html_writer::tag('p', s(shorten_text(strip_tags($r['summary']), 140)), ['class' => 'card-text text-muted']);
+        // Card teaser: filter FIRST (so multilang collapses to one language),
+        // then strip tags/decode entities with content_to_text(), then
+        // shorten, then escape exactly once. strip_tags() + s() alone never
+        // filtered and double-escaped pre-encoded entities. FORMAT_HTML with
+        // cleaning left ON, because this summary came over a web service from
+        // a remote Exchange site and is untrusted — never 'noclean' => true.
+        // Same order the Exchange's own index.php card summary uses.
+        $summaryfiltered = format_text($r['summary'] ?? '', FORMAT_HTML, ['context' => $context]);
+        echo html_writer::tag(
+            'p',
+            s(shorten_text(content_to_text($summaryfiltered, FORMAT_HTML), 140)),
+            ['class' => 'card-text text-muted']
+        );
+        // Licence shortname is an identifier from the Exchange's accepted list
+        // ('cc-sa-4.0'), not authored display text — s(), not format_string().
         echo html_writer::tag(
             'div',
             s(\core_text::strtoupper($r['licenseshortname'])),

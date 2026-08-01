@@ -3,6 +3,36 @@
 All notable changes to this project are documented in this file, in
 [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.0.3] - 2026-08-01
+
+### Security
+
+- Course names in the import target-course `<select>` on
+  `resource_preview.php` were passed unescaped to `html_writer::select()`,
+  which does not escape option labels (only optgroup labels). A course name
+  containing HTML could inject markup for any viewer of that menu. Now run
+  through `format_string()` in the course context.
+- The remote resource summary is rendered with `'blanktarget' => true`, so core
+  adds `rel="noreferrer"` to any link a remote Exchange placed in it. HTML
+  purification already blocked script injection; this closes the residual
+  referrer/navigation exposure from a hostile or compromised Exchange.
+
+### Fixed
+
+- Resource titles, creator names, and structure-preview section and activity
+  names on `resource_preview.php` and `browse.php` are passed through
+  `format_string()` instead of bare `s()`, so multilang markup is filtered
+  rather than shown literally.
+- The resource summary is rendered with `format_text()` in `FORMAT_HTML` with
+  cleaning on, instead of `FORMAT_PLAIN` — text filters now apply, and the
+  author's formatting survives. Cleaning is deliberate and non-optional: the
+  summary arrives from a remote Exchange over a web service.
+- The browse card summary teaser filters before flattening to text, so a
+  bilingual summary collapses to one language instead of running both
+  together.
+- The cover-image `alt` attribute no longer double-escapes an ampersand.
+- The digits-only section-number label no longer wraps a lang string in `s()`.
+
 ## [1.0.2] - 2026-07-31
 
 ### Changed
