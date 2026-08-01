@@ -77,6 +77,16 @@ if ($hassiteconfig) {
         0
     ));
 
+    // Display only — it switches a CSS class on, nothing more. The stored and
+    // rendered shortname is unchanged either way, so turning this off cannot
+    // affect what is shared, filtered or compared.
+    $settings->add(new admin_setting_configcheckbox(
+        'local_oerclient/uppercaselicencenames',
+        get_string('settings_uppercaselicencenames', 'local_oerclient'),
+        get_string('settings_uppercaselicencenames_desc', 'local_oerclient'),
+        1
+    ));
+
     $ADMIN->add('local_oerclient_category', new admin_externalpage(
         'local_oerclient_register',
         get_string('registertitle', 'local_oerclient'),

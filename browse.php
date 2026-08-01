@@ -23,6 +23,7 @@
  */
 
 use local_oerclient\local\exchange_client;
+use local_oerclient\local\licence_display;
 
 require(__DIR__ . '/../../config.php');
 require_login();
@@ -145,11 +146,14 @@ if (empty($result['results'])) {
             s(shorten_text(content_to_text($summaryfiltered, FORMAT_HTML), 140)),
             ['class' => 'card-text text-muted']
         );
-        // Licence shortname is an identifier from the Exchange's accepted list
-        // ('cc-sa-4.0'), not authored display text — s(), not format_string().
+        // Printed exactly as the Exchange sent it. Showing it in capitals is
+        // presentation only — licence_display attaches a CSS class and
+        // styles.css does the upper-casing, so the text in the DOM stays the
+        // real identifier and an admin can switch the capitals off. Returns
+        // escaped HTML; escaping lives in the helper.
         echo html_writer::tag(
             'div',
-            s(\core_text::strtoupper($r['licenseshortname'])),
+            licence_display::html($r['licenseshortname']),
             ['class' => 'small text-muted']
         );
         // Link out to the canonical page on the Exchange, which carries the

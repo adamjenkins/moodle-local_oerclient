@@ -3,6 +3,27 @@
 All notable changes to this project are documented in this file, in
 [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [Unreleased]
+
+### Changed
+
+- Licence shortnames are no longer upper-cased in PHP. `browse.php` and
+  `resource_preview.php` print the shortname exactly as the Exchange sent it,
+  wrapped in `<span class="oer-licence-name">` by the new
+  `\local_oerclient\local\licence_display`; the capitals come from `styles.css`
+  (the plugin's first stylesheet). This plugin was the only one in the suite
+  that transformed the text, which is why the same resource read `CC-SA-4.0`
+  here and `cc-sa-4.0` on the Exchange. The DOM text is now always the stored
+  identifier, so copied text matches and screen readers announce the code
+  rather than spelling out letters.
+
+### Added
+
+- **Show licence codes in capitals** setting (`uppercaselicencenames`, on by
+  default), which drops the `.oer-licence-name--upper` modifier class. A theme
+  can override that class instead, since plugin stylesheets are emitted before
+  theme CSS. `block_oerclient` follows this setting too.
+
 ## [1.0.3] - 2026-08-01
 
 ### Security

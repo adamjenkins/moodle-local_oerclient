@@ -24,6 +24,7 @@
 
 use local_oerclient\local\exchange_client;
 use local_oerclient\local\import_manager;
+use local_oerclient\local\licence_display;
 
 require(__DIR__ . '/../../config.php');
 require_login();
@@ -147,13 +148,17 @@ if (!empty($resource['creatorname'])) {
 }
 // Licence shortname stays s()-escaped, NOT format_string()'d: it is an
 // identifier from the Exchange's accepted-licence list ('cc-sa-4.0'), not
-// authored display text — nobody writes a multilang span in one, and it is
-// upper-cased here precisely because it is read as a code. Matches the
-// Exchange's own resource.php, which also uses s() for it.
+// authored display text — nobody writes a multilang span in one. The
+// Exchange's own resource.php treats it the same way. It is printed exactly
+// as received: showing it in capitals is presentation only, done by
+// licence_display's CSS class, so the text in the DOM stays the real
+// identifier and an admin can switch the capitals off. The helper returns
+// escaped HTML, which is what {$a} receives here — as it already does for
+// 'createdby' above, whose argument is a link.
 echo html_writer::tag('p', get_string(
     'licenselabel',
     'local_oerclient',
-    s(\core_text::strtoupper($resource['licenseshortname']))
+    licence_display::html($resource['licenseshortname'])
 ));
 // FORMAT_HTML, with cleaning left ON. Two reasons, and they pull the same way:
 // FORMAT_PLAIN s()-escapes before any filter runs (lib/classes/formatting.php),

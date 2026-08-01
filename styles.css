@@ -1,0 +1,15 @@
+/* Licence shortnames are stored and printed exactly as core writes them —
+   lowercase (lib/licenselib.php). Showing them in capitals is presentation
+   only: the text in the DOM stays the real identifier, so screen readers
+   announce it correctly and a copy-paste still matches the database.
+
+   local_oerclient\local\licence_display attaches .oer-licence-name always,
+   and adds this modifier only while the plugin's 'uppercaselicencenames'
+   setting is on — so an admin can switch the capitals off without touching
+   CSS. A theme can override it too: plugin stylesheets are emitted before
+   theme CSS, so a rule in the theme's Raw SCSS wins at equal specificity.
+
+       .oer-licence-name--upper { text-transform: unset; } */
+.oer-licence-name--upper {
+    text-transform: uppercase;
+}

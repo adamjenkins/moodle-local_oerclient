@@ -57,6 +57,13 @@ with self-signed certificates on private networks — never enable it on a
 production site; it lets a network attacker read every token this plugin
 sends.
 
+**Show licence codes in capitals** (`uppercaselicencenames`, on by default)
+chooses whether a resource's licence code reads `CC-SA-4.0` or `cc-sa-4.0`
+when browsing and previewing the catalogue, and in the Dashboard block. It is
+a display setting: the capitals are applied with CSS, so the licence is
+stored, sent and compared exactly as received either way. A theme can override
+it with `.oer-licence-name--upper { text-transform: unset; }`.
+
 ## Requirements
 
 - Moodle 5.0–5.2 (`$plugin->supported`).
