@@ -3,10 +3,7 @@
 All notable changes to this project are documented in this file, in
 [Keep a Changelog](https://keepachangelog.com/) format.
 
-## [1.0.5] - unreleased (draft)
-
-Further work is going into this release; set the date here and remove the draft
-note from `CHANGES.md` when it is tagged.
+## [1.0.5] - 2026-08-02
 
 ### Added
 

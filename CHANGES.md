@@ -1,10 +1,5 @@
 # Release notes — 1.0.5
 
-> **Draft.** More work is going into this release. Before tagging: remove this
-> note, add the remaining entries, set the date on the `[1.0.5]` heading in
-> `changelog.md`, and bump `$plugin->version` if any code changed after
-> `2026080200`.
-
 ## The share status page keeps up with the share
 
 Sharing a course to the Exchange happens in the background: your site builds a
