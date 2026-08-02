@@ -27,7 +27,11 @@ post-import localization checklist.
   import is **hidden from students** until you have reviewed it and made it
   visible; importing an activity into a course you already had never changes
   that course's visibility.
-- **Share status**: the share status page reports what the Exchange actually
+- **Share status**: while a share is still being built and uploaded, the status
+  page shows which stage it has reached (queued → building a sanitized backup →
+  uploading → published) and advances in place as the background task works, so
+  there is nothing to reload and no guessing about when to. Once it settles the
+  page reports what the Exchange actually
   holds for each of your shares — status, first published, last updated,
   visible or hidden, downloads and imports — and offers **Update the shared
   copy**, which re-uploads the course as it stands now and replaces the
