@@ -37,5 +37,5 @@ $plugin->version   = 2026080200;
 // on every course page for a sharer.
 $plugin->requires  = 2025041400;
 $plugin->supported = [500, 502];
-$plugin->release   = '1.0.4';
+$plugin->release   = '1.0.5';
 $plugin->maturity  = MATURITY_STABLE;

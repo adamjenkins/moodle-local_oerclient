@@ -1,23 +1,41 @@
-# Release notes — 1.0.4
+# Release notes — 1.0.5
 
-## Licence codes now match the Exchange, and you can choose the style
+> **Draft.** More work is going into this release. Before tagging: remove this
+> note, add the remaining entries, set the date on the `[1.0.5]` heading in
+> `changelog.md`, and bump `$plugin->version` if any code changed after
+> `2026080200`.
 
-A resource's licence code was shown in capitals here — `CC-SA-4.0` — while the
-Exchange showed the same resource as `cc-sa-4.0`. This plugin was the only one
-in the suite that changed the text, so the two never agreed. The code is now
-displayed exactly as the Exchange sends it, on the browse and resource-preview
-pages and in the Dashboard block.
+## The share status page keeps up with the share
 
-A new setting, **Show licence codes in capitals**, chooses between the two
-styles. It is on by default, so codes still read `CC-SA-4.0` — but the capitals
-are now applied with CSS rather than by rewriting the text. That means text you
-copy from a page matches what the Exchange actually holds, and a screen reader
-reads the code out rather than spelling out capital letters.
+Sharing a course to the Exchange happens in the background: your site builds a
+sanitized backup, uploads it, and records the result. The status page used to
+show whichever of those stages was current at the moment you opened it, and
+gave no sign that it would ever say anything different — so the only way to
+find out how a share had gone was to keep pressing reload.
 
-If you would rather control this from your theme than with the setting, the
-codes are wrapped in `.oer-licence-name`, and
-`.oer-licence-name--upper { text-transform: unset; }` in your theme's Raw SCSS
-overrides the plugin.
+It now shows the stage as a progress indicator — queued, building a sanitized
+backup, uploading, published — and advances it in place as the work happens. As
+soon as the share finishes, the page shows the outcome by itself: the link to
+the resource on the Exchange, or the reason it failed.
 
-No database changes; no action required after upgrading beyond the usual
-`admin/cli/upgrade.php`.
+The indicator counts stages rather than bytes, deliberately. Your browser never
+uploads anything here — the backup is built and sent by your Moodle site — so
+there is no transfer to measure, and a percentage would be invented.
+
+## Under the hood
+
+- This plugin's first `db/services.php`, declaring the AJAX-only
+  `local_oerclient_get_share_state`. It reads one row of the caller's own share
+  and makes no call to the Exchange, so a teacher watching the page does not
+  become a repeating request against another institution's server.
+- New AMD module `local_oerclient/share_status`.
+- The status page's own rules are unchanged: you see your own shares, and an
+  administrator can see any of them.
+
+## Checks run for this release
+
+`scripts/verify-gates` (proving each gate fires on known-bad input) followed by
+`scripts/phpcs-ci` — clean; `local_moodlecheck` — clean (docblock/signature
+consistency only); PHPUnit — 88 tests, 201 assertions, all passing. The stage
+indicator was verified in a browser against a live site, advancing through the
+stages and revealing the outcome without a reload.
