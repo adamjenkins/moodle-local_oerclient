@@ -3,6 +3,27 @@
 All notable changes to this project are documented in this file, in
 [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [Unreleased]
+
+### Added
+
+- The share status page now updates itself as the share progresses, with a
+  stage bar moving through queued → building a sanitized backup → uploading →
+  published, and it reveals the Exchange link (or the failure reason) as soon
+  as the background task finishes. Previously the page rendered whichever stage
+  was current when it loaded and gave no hint that reloading would ever show
+  anything different. The bar is stage-based rather than byte-based on purpose:
+  the backup is built and uploaded server-side, so there is no browser upload
+  to measure.
+- This plugin's first `db/services.php`, declaring the AJAX-only
+  `local_oerclient_get_share_state`. It reads one row of the caller's own
+  share and makes no call to the Exchange, so a teacher watching a page does
+  not turn into a poll against another institution's server. Validated in the
+  system context, matching the status page's own login-plus-ownership gate:
+  validating the share's course context instead would run core's enrolment
+  check and lock out both an administrator diagnosing someone else's share and
+  a teacher whose enrolment ended after they shared.
+
 ## [1.0.4] - 2026-08-01
 
 ### Changed

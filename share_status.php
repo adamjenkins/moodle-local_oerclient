@@ -77,11 +77,48 @@ if (optional_param('update', 0, PARAM_INT) && confirm_sesskey()) {
 
 echo $OUTPUT->header();
 
-echo html_writer::tag('p', get_string(
+$stagelabel = get_string(
     'sharestatuslabel',
     'local_oerclient',
     get_string('sharestatus_' . $share->status, 'local_oerclient')
-));
+);
+
+if (in_array($share->status, ['pending', 'backingup', 'uploading'], true)) {
+    // Still in flight: draw the stage the background task has reached and let
+    // the poller move it, rather than rendering a single frozen word and
+    // leaving the teacher to guess when to reload. The bar is stage-based on
+    // purpose — nothing is being uploaded from this browser, so there are no
+    // bytes to count (see share_status.js).
+    $stagepercents = ['pending' => 10, 'backingup' => 45, 'uploading' => 80];
+    $percent = $stagepercents[$share->status];
+    echo html_writer::tag(
+        'div',
+        html_writer::tag(
+            'div',
+            html_writer::tag('div', '', [
+                'class' => 'progress-bar progress-bar-striped progress-bar-animated',
+                'style' => 'width: ' . $percent . '%;',
+                'role' => 'progressbar',
+                'aria-valuemin' => '0',
+                'aria-valuemax' => '100',
+                'aria-valuenow' => (string) $percent,
+                'aria-label' => $stagelabel,
+            ]),
+            ['class' => 'progress mb-1', 'style' => 'height: 1rem;']
+        )
+            . html_writer::tag('p', $stagelabel, [
+                'data-region' => 'oerclient-share-stage',
+                // The stage text is replaced as the job advances, so it is
+                // announced rather than silently swapped.
+                'role' => 'status',
+                'aria-live' => 'polite',
+            ]),
+        ['data-region' => 'oerclient-share-progress', 'class' => 'mb-3']
+    );
+    $PAGE->requires->js_call_amd('local_oerclient/share_status', 'init', [(int) $share->id]);
+} else {
+    echo html_writer::tag('p', $stagelabel);
+}
 
 if ($share->status === 'failed' && $share->errormessage) {
     echo $OUTPUT->notification(s($share->errormessage), 'error');

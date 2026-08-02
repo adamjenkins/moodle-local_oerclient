@@ -144,6 +144,7 @@ $string['sharestatus_published'] = 'published';
 $string['sharestatus_uploading'] = 'uploading to the Exchange';
 $string['sharestatuslabel'] = 'Status: {$a}';
 $string['sharestatustitle'] = 'Share status';
+$string['sharestillrunning'] = 'This share is taking longer than expected. Your course is unaffected; reload this page to check again, or ask an administrator whether scheduled tasks are running.';
 $string['sharesubmit'] = 'Share it';
 $string['sharesummarylabel'] = 'Summary';
 $string['sharetagslabel'] = 'Tags (comma-separated)';

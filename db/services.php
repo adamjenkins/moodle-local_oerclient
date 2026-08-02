@@ -15,7 +15,12 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version information for local_oerclient.
+ * External function declarations.
+ *
+ * This plugin is a web-service CLIENT, not a provider: everything it does
+ * across sites it does by calling the Exchange. The one function here is
+ * AJAX-only and never published as a service — it exists so a teacher's own
+ * browser can watch their share progress without reloading the page.
  *
  * @package    local_oerclient
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
@@ -24,18 +29,13 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'local_oerclient';
-// Bumped for this plugin's first db/services.php: external-function
-// registrations are only re-read on upgrade, so without it the share-status
-// poller is rejected on an already-installed site. The new AMD module's
-// cache revision keys on this number too.
-$plugin->version   = 2026080200;
-// 2025041400 = the Moodle 5.0 branching version. The previous value
-// (2024100700) was Moodle 4.5 while its comment claimed 5.0 — and this
-// plugin hard-depends on core\navigation\navigation_node, which only exists
-// under that namespace since 5.0 (MDL-82159), so a 4.5 install would fatal
-// on every course page for a sharer.
-$plugin->requires  = 2025041400;
-$plugin->supported = [500, 502];
-$plugin->release   = '1.0.4';
-$plugin->maturity  = MATURITY_STABLE;
+$functions = [
+    'local_oerclient_get_share_state' => [
+        'classname'   => 'local_oerclient\external\get_share_state',
+        'methodname'  => 'execute',
+        'description' => 'Progress of one of the caller\'s own shares, for the share status page.',
+        'type'        => 'read',
+        'ajax'        => true,
+        'loginrequired' => true,
+    ],
+];

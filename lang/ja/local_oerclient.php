@@ -144,6 +144,7 @@ $string['sharestatus_published'] = '公開済み';
 $string['sharestatus_uploading'] = 'Exchangeへアップロード中';
 $string['sharestatuslabel'] = 'ステータス: {$a}';
 $string['sharestatustitle'] = '共有ステータス';
+$string['sharestillrunning'] = 'この共有は想定より時間がかかっています。コースには影響ありません。このページを再読み込みして確認するか、スケジュールタスクが実行されているか管理者にお問い合わせください。';
 $string['sharesubmit'] = '共有する';
 $string['sharesummarylabel'] = '概要';
 $string['sharetagslabel'] = 'タグ（カンマ区切り）';
