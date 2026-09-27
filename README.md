@@ -70,7 +70,7 @@ it with `.oer-licence-name--upper { text-transform: unset; }`.
 
 ## Requirements
 
-- Moodle 5.0–5.2 (`$plugin->supported`).
+- Moodle 5.0–5.3 (`$plugin->supported`).
 
 ## License
 

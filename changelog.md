@@ -3,6 +3,14 @@
 All notable changes to this project are documented in this file, in
 [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [Unreleased]
+
+### Changed
+
+- Declare Moodle 5.3 support: `$plugin->supported` now runs to 503
+  (`[500, 503]`). A sweep of the plugin against the Moodle 5.3 upgrade notes
+  found nothing that needed a code change.
+
 ## [1.0.5] - 2026-08-02
 
 ### Added
