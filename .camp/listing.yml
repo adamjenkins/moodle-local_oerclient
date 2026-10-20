@@ -36,6 +36,16 @@ labels:
 links:
   docs: https://github.com/adamjenkins/moodle-local_oerclient#readme
   issues: https://github.com/adamjenkins/moodle-local_oerclient/issues
-# screenshots:
-#   - path: .camp/screenshots/overview.png
-#     caption: Main view
+screenshots:
+  - path: .camp/screenshots/01-share-wizard.png
+    caption: "Share a whole course or one activity: licence, description and tags."
+  - path: .camp/screenshots/02-share-status.png
+    caption: "Each share's progress and how it is doing on the Exchange, with Update the shared copy."
+  - path: .camp/screenshots/03-browse.png
+    caption: "Browse and search the Exchange's catalogue from your own site."
+  - path: .camp/screenshots/04-preview.png
+    caption: "Preview a resource's structure and required plugins before importing it."
+  - path: .camp/screenshots/05-imported.png
+    caption: "After an import: the course stays hidden, with a checklist of what to adapt first."
+  - path: .camp/screenshots/06-settings.png
+    caption: "Connecting the site: Exchange URL, registration and the site token."

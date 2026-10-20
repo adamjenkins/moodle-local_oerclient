@@ -1,15 +1,13 @@
-# Release notes — 1.0.7
+# Release notes — 1.0.8
 
-The Japanese language pack (lang/ja) is no longer included: releases ship the
-English strings only, as the Moodle Plugins directory expects. Japanese is
-provided through Moodle's language packs.
+- After an import, the result page now shows the checklist of what to adapt before students see
+  the course (activity dates, names and contact details, the hidden course, grade items). It had
+  never been shown: it travelled in the page address as a value that Moodle's parameter cleaning
+  silently discarded.
+- The "installed" and "missing" plugin badges on a resource preview are readable: the missing
+  one was white on orange (1.95:1). Both now take their text colour from the theme.
+- A plugin icon now appears beside the plugin on Site administration, Plugins, Plugins overview.
+- The camp listing (`.camp/listing.yml`) now carries screenshots with captions. They are
+  excluded from the plugin ZIP.
 
-The Composer package now accepts later Moodle 5.x releases
-(`moodle/moodle` `^5.0`) instead of stopping before 5.4. The supported
-versions declared in `version.php` are unchanged (Moodle 5.0 to 5.3).
-
-The automated tests now run against the released Moodle 5.3
-(`MOODLE_503_STABLE`) instead of Moodle's development branch, and those runs
-now count towards a pass.
-
-No database or capability changes. No action is required after upgrading.
+No database or capability changes.
