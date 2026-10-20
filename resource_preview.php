@@ -193,8 +193,8 @@ if (!empty($requiredplugins)) {
         // text — s(), never format_string().
         $label = $plugin['type'] . '_' . $plugin['name'];
         $badge = $installed
-            ? html_writer::tag('span', get_string('plugininstalled', 'local_oerclient'), ['class' => 'badge bg-success ms-2'])
-            : html_writer::tag('span', get_string('pluginmissing', 'local_oerclient'), ['class' => 'badge bg-warning ms-2']);
+            ? html_writer::tag('span', get_string('plugininstalled', 'local_oerclient'), ['class' => 'badge text-bg-success ms-2'])
+            : html_writer::tag('span', get_string('pluginmissing', 'local_oerclient'), ['class' => 'badge text-bg-warning ms-2']);
         echo html_writer::tag('li', s($label) . $badge);
     }
     echo html_writer::end_tag('ul');
