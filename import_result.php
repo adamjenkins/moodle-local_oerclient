@@ -26,7 +26,6 @@ require(__DIR__ . '/../../config.php');
 require_login();
 
 $courseid = required_param('courseid', PARAM_INT);
-$checklistparam = optional_param('checklist', '', PARAM_BASE64);
 
 $context = context_course::instance($courseid);
 require_capability('local/oerclient:import', $context);
@@ -37,7 +36,9 @@ $PAGE->set_pagelayout('standard');
 $PAGE->set_title(get_string('importresulttitle', 'local_oerclient'));
 $PAGE->set_heading(get_string('importresulttitle', 'local_oerclient'));
 
-$checklist = json_decode(base64_decode($checklistparam), true) ?: [];
+// Built here rather than passed in the URL: it does not depend on the resource,
+// and as a PARAM_BASE64 parameter it never arrived (see the method's docblock).
+$checklist = \local_oerclient\local\import_manager::localization_checklist();
 
 echo $OUTPUT->header();
 

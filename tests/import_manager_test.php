@@ -264,4 +264,29 @@ final class import_manager_test extends \advanced_testcase {
             'importing into an existing course must not change its visibility'
         );
     }
+
+    /**
+     * The post-import checklist is built by the result page itself, and has
+     * every item.
+     *
+     * It used to travel to import_result.php as a base64 URL parameter read
+     * with PARAM_BASE64, which only accepts PEM-style data in 64-character
+     * lines. The single long line was cleaned to '' (asserted below), so the
+     * checklist was never shown after any import.
+     *
+     * @return void
+     */
+    public function test_the_localization_checklist_is_built_in_full(): void {
+        $checklist = \local_oerclient\local\import_manager::localization_checklist();
+
+        $this->assertSame([
+            get_string('checklist_dates', 'local_oerclient'),
+            get_string('checklist_names', 'local_oerclient'),
+            get_string('checklist_visibility', 'local_oerclient'),
+            get_string('checklist_grading', 'local_oerclient'),
+        ], $checklist);
+
+        // Why it is no longer passed in the URL: PARAM_BASE64 drops it.
+        $this->assertSame('', clean_param(base64_encode(json_encode($checklist)), PARAM_BASE64));
+    }
 }

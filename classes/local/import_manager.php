@@ -274,10 +274,16 @@ class import_manager {
      * A short, generic set of "you probably want to change these" hints —
      * the post-import localization checklist from DESIGN.md §1.
      *
-     * @param array $resource
+     * Public because import_result.php builds it itself. It used to arrive
+     * there as a base64 URL parameter read with PARAM_BASE64, which accepts
+     * only PEM-style data in 64-character lines: the single long line this
+     * produced was cleaned to '', so the checklist was never shown. It does
+     * not depend on the resource, so there is nothing to pass.
+     *
+     * @param array $resource the imported resource (not used; kept for callers)
      * @return string[]
      */
-    protected static function localization_checklist(array $resource): array {
+    public static function localization_checklist(array $resource = []): array {
         return [
             get_string('checklist_dates', 'local_oerclient'),
             get_string('checklist_names', 'local_oerclient'),

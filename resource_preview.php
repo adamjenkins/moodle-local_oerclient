@@ -94,9 +94,9 @@ if ($resource['type'] !== 'data' && data_submitted() && confirm_sesskey() && opt
         debugging('local_oerclient: record_import failed: ' . $e->getMessage(), DEBUG_DEVELOPER);
     }
 
+    // The result page builds the checklist itself (import_manager::localization_checklist()).
     redirect(new moodle_url('/local/oerclient/import_result.php', [
         'courseid' => $importresult['courseid'],
-        'checklist' => base64_encode(json_encode($importresult['checklist'])),
     ]));
 }
 
