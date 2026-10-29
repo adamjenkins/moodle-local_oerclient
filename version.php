@@ -34,7 +34,7 @@ $plugin->component = 'local_oerclient';
 // 2026102900: local/oerclient:import gains RISK_XSS (capabilities are
 // re-read only on upgrade), and the upgrade step that splits
 // 'allowprivateexchange' off 'acceptinvalidcerts'. Release unchanged.
-$plugin->version   = 2026102900;
+$plugin->version   = 2026102901;
 // 2025041400 = the Moodle 5.0 branching version. The previous value
 // (2024100700) was Moodle 4.5 while its comment claimed 5.0 — and this
 // plugin hard-depends on core\navigation\navigation_node, which only exists
@@ -42,5 +42,5 @@ $plugin->version   = 2026102900;
 // on every course page for a sharer.
 $plugin->requires  = 2025041400;
 $plugin->supported = [500, 503];
-$plugin->release   = '1.0.8';
+$plugin->release   = '1.0.9';
 $plugin->maturity  = MATURITY_STABLE;

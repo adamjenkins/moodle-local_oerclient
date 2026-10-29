@@ -1,13 +1,20 @@
-# Release notes — 1.0.8
+# Release notes — 1.0.9
 
-- After an import, the result page now shows the checklist of what to adapt before students see
-  the course (activity dates, names and contact details, the hidden course, grade items). It had
-  never been shown: it travelled in the page address as a value that Moodle's parameter cleaning
-  silently discarded.
-- The "installed" and "missing" plugin badges on a resource preview are readable: the missing
-  one was white on orange (1.95:1). Both now take their text colour from the theme.
-- A plugin icon now appears beside the plugin on Site administration, Plugins, Plugins overview.
-- The camp listing (`.camp/listing.yml`) now carries screenshots with captions. They are
-  excluded from the plugin ZIP.
+Security release.
 
-No database or capability changes.
+- Imported activities now arrive hidden. An activity imported into an existing course used to
+  keep the visibility it had in the backup, so students could see content written on another
+  site before anyone here had looked at it. The result page and the post-import checklist say
+  what was hidden. HTML in the imported activities' descriptions and in page and label content is
+  cleaned after the restore, in course imports as well.
+- The import capability (local/oerclient:import) is now flagged as an XSS risk as well as a spam
+  risk, since it brings content from other sites into courses.
+- "Update the shared copy" no longer queues a second upload while one is still being prepared or
+  uploaded, which could create duplicate catalogue entries.
+- Deleting a user now deletes their link to the Exchange, and with it their Exchange token.
+- The developer setting "Accept invalid TLS certificates" now relaxes only certificate checks.
+  Allowing an Exchange on a private network address is a separate new setting, "Allow an Exchange
+  on a private network address". Sites that had the old setting on get the new one turned on by the upgrade, so they
+  keep reaching their Exchange.
+
+Capability change: local/oerclient:import gains RISK_XSS. No database schema changes.

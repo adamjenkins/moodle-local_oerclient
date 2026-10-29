@@ -3,6 +3,23 @@
 All notable changes to this project are documented in this file, in
 [Keep a Changelog](https://keepachangelog.com/) format.
 
+## [1.0.9] - 2026-10-29
+
+### Security
+
+- Activities imported into an existing course land hidden, and the restored
+  HTML of every imported activity's description and of page and label content
+  is cleaned. The result page and the checklist say what was hidden.
+- local/oerclient:import is flagged RISK_XSS as well as RISK_SPAM.
+- "Update the shared copy" refuses a share whose upload is still in flight.
+- Deleting a user deletes their Exchange link and token.
+
+### Changed
+
+- "Accept invalid TLS certificates" relaxes only certificate checks; the new
+  "Allow an Exchange on a private network address" setting covers core's curl host/port
+  check. The upgrade turns it on where the old setting was on.
+
 ## [1.0.8] - 2026-10-20
 
 ### Added
