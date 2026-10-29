@@ -69,5 +69,18 @@ function xmldb_local_oerclient_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026072700, 'local', 'oerclient');
     }
 
+    if ($oldversion < 2026102900) {
+        // 'acceptinvalidcerts' used to switch off core's curl host/port guard
+        // as well as certificate checks; that half is now its own setting.
+        // A site that had it on is a dev rig whose Exchange is likely on a
+        // private address, so carry the old behaviour over rather than cut
+        // it off from its Exchange on upgrade.
+        if (get_config('local_oerclient', 'acceptinvalidcerts')
+                && get_config('local_oerclient', 'allowprivateexchange') === false) {
+            set_config('allowprivateexchange', 1, 'local_oerclient');
+        }
+        upgrade_plugin_savepoint(true, 2026102900, 'local', 'oerclient');
+    }
+
     return true;
 }

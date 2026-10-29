@@ -23,12 +23,14 @@ namespace local_oerclient\local;
  * "Transport: ride on core web services".
  *
  * Transport security: TLS verification and core's curl security guard are
- * ON unless the admin explicitly enables the 'acceptinvalidcerts' setting
- * (default off, clearly marked development-only). Earlier revisions shipped
- * verify=false + ignoresecurity unconditionally for the self-signed dev
- * harness — which meant every site and personal token travelled over
- * unverified TLS on ANY production install, harvestable by a network MITM.
- * The dev harness now opts in via the setting instead.
+ * ON by default, and each has its own development-only opt-out:
+ * 'acceptinvalidcerts' turns off certificate verification only, and
+ * 'allowprivateexchange' turns off core's blocked-hosts/allowed-ports guard
+ * only. Earlier revisions shipped verify=false + ignoresecurity
+ * unconditionally for the self-signed dev harness — which meant every site
+ * and personal token travelled over unverified TLS on ANY production
+ * install, harvestable by a network MITM. Until the 2026-10-28 security
+ * audit (OERC-05) the one setting also switched off the curl guard.
  *
  * @package    local_oerclient
  * @copyright  2026 Adam Jenkins <adam@wisecat.net>
@@ -75,13 +77,16 @@ class exchange_client {
      * @return array Guzzle/core\http_client options
      */
     public static function http_options(): array {
-        // Default off: TLS verified, core's blocked-hosts/allowed-ports
-        // curl guard active. The setting exists for dev rigs with
-        // self-signed certs on private IPs and says so in its description.
-        $insecure = (bool) get_config('local_oerclient', 'acceptinvalidcerts');
+        // Both default off: TLS verified, core's blocked-hosts/allowed-ports
+        // curl guard active. They are separate so that a dev rig with a
+        // self-signed certificate does not also lose the curl guard, and one
+        // on a private address does not also lose certificate checks; each
+        // setting's description says exactly what it turns off.
+        $acceptinvalidcerts = (bool) get_config('local_oerclient', 'acceptinvalidcerts');
+        $allowprivate = (bool) get_config('local_oerclient', 'allowprivateexchange');
         return [
-            'verify' => !$insecure,
-            'ignoresecurity' => $insecure,
+            'verify' => !$acceptinvalidcerts,
+            'ignoresecurity' => $allowprivate,
             'connect_timeout' => 3,
             'timeout' => 10,
         ];

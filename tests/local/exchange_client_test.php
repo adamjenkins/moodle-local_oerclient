@@ -156,4 +156,29 @@ final class exchange_client_test extends \advanced_testcase {
         $this->assertGreaterThan(0, $httpclient->getConfig('connect_timeout'));
         $this->assertGreaterThan(0, $httpclient->getConfig('timeout'));
     }
+
+    /**
+     * The two development-only settings each relax one thing: accepting
+     * invalid certificates leaves core's curl host/port guard on, and
+     * allowing a private Exchange leaves certificate checks on (security
+     * audit OERC-05, 2026-10-28). With neither set, both checks are on.
+     */
+    public function test_each_dev_setting_relaxes_only_its_own_check(): void {
+        $this->resetAfterTest();
+
+        $options = exchange_client::http_options();
+        $this->assertTrue($options['verify']);
+        $this->assertFalse($options['ignoresecurity']);
+
+        set_config('acceptinvalidcerts', 1, 'local_oerclient');
+        $options = exchange_client::http_options();
+        $this->assertFalse($options['verify']);
+        $this->assertFalse($options['ignoresecurity'], 'accepting invalid certificates must not turn off the curl guard');
+
+        set_config('acceptinvalidcerts', 0, 'local_oerclient');
+        set_config('allowprivateexchange', 1, 'local_oerclient');
+        $options = exchange_client::http_options();
+        $this->assertTrue($options['verify'], 'allowing a private Exchange must not turn off certificate checks');
+        $this->assertTrue($options['ignoresecurity']);
+    }
 }

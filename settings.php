@@ -77,6 +77,13 @@ if ($hassiteconfig) {
         0
     ));
 
+    $settings->add(new admin_setting_configcheckbox(
+        'local_oerclient/allowprivateexchange',
+        get_string('settings_allowprivateexchange', 'local_oerclient'),
+        get_string('settings_allowprivateexchange_desc', 'local_oerclient'),
+        0
+    ));
+
     // Display only — it switches a CSS class on, nothing more. The stored and
     // rendered shortname is unchanged either way, so turning this off cannot
     // affect what is shared, filtered or compared.

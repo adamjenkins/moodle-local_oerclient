@@ -55,11 +55,16 @@ Site administration > Plugins > Local plugins > OER Client:
    "Link my Exchange account" button on `/local/oerclient/index.php`.
 
 Connections to the Exchange verify TLS certificates and respect Moodle's
-outbound-request security checks. **Accept invalid TLS certificates**
-(`acceptinvalidcerts`, off by default) exists only for development rigs
-with self-signed certificates on private networks — never enable it on a
-production site; it lets a network attacker read every token this plugin
-sends.
+outbound-request security checks. Two development-only settings, both off by
+default, each relax one of these and nothing else: **Accept invalid TLS
+certificates** (`acceptinvalidcerts`) skips certificate verification, for
+rigs with self-signed certificates; **Allow an Exchange on a private network
+address** (`allowprivateexchange`) skips core's blocked-hosts and
+allowed-ports checks, for an Exchange on a private address. Never enable
+either on a production site; the first lets a network attacker read every
+token this plugin sends. A site that had `acceptinvalidcerts` on before the
+two were split gets `allowprivateexchange` turned on by the upgrade, so it
+keeps reaching its Exchange.
 
 **Show licence codes in capitals** (`uppercaselicencenames`, on by default)
 chooses whether a resource's licence code reads `CC-SA-4.0` or `cc-sa-4.0`
