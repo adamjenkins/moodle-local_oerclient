@@ -70,4 +70,30 @@ final class observer_test extends \advanced_testcase {
         $this->assertEquals(1, $DB->count_records('local_oerclient_shares', ['courseid' => $keepcourse->id]));
         $this->assertEquals(1, $DB->count_records('local_oerclient_imports', ['courseid' => $keepcourse->id]));
     }
+
+    /**
+     * Deleting a user removes their account link, and with it their live
+     * personal token for the Exchange (security audit OERC-04, 2026-10-28).
+     * Core's user deletion does not call privacy providers, so nothing else
+     * would. Another user's link is left alone.
+     */
+    public function test_deleting_a_user_removes_their_exchange_link(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $doomed = $this->getDataGenerator()->create_user();
+        $survivor = $this->getDataGenerator()->create_user();
+        foreach ([$doomed, $survivor] as $i => $user) {
+            $DB->insert_record('local_oerclient_link', (object) [
+                'userid' => $user->id, 'exchangeuserid' => 100 + $i,
+                'token' => 'token' . $i, 'timecreated' => time(),
+            ]);
+        }
+
+        delete_user($doomed);
+
+        $this->assertFalse($DB->record_exists('local_oerclient_link', ['userid' => $doomed->id]));
+        $this->assertFalse($DB->record_exists('local_oerclient_link', ['token' => 'token0']));
+        $this->assertTrue($DB->record_exists('local_oerclient_link', ['userid' => $survivor->id]));
+    }
 }

@@ -29,4 +29,8 @@ $observers = [
         'eventname' => \core\event\course_deleted::class,
         'callback' => \local_oerclient\observer::class . '::course_deleted',
     ],
+    [
+        'eventname' => \core\event\user_deleted::class,
+        'callback' => \local_oerclient\observer::class . '::user_deleted',
+    ],
 ];

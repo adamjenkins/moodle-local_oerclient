@@ -41,4 +41,22 @@ class observer {
         $DB->delete_records('local_oerclient_shares', ['courseid' => $courseid]);
         $DB->delete_records('local_oerclient_imports', ['courseid' => $courseid]);
     }
+
+    /**
+     * A deleted user's account link holds their live personal token for the
+     * Exchange. Core's user deletion does not call privacy providers, so
+     * without this the token stayed in local_oerclient_link for good
+     * (security audit OERC-04, 2026-10-28).
+     *
+     * Only the link goes. The user's share and import rows record what was
+     * published from, or imported into, a course; they belong to that course
+     * and are removed with it (course_deleted above) or by a privacy request.
+     *
+     * @param \core\event\user_deleted $event
+     */
+    public static function user_deleted(\core\event\user_deleted $event): void {
+        global $DB;
+
+        $DB->delete_records('local_oerclient_link', ['userid' => $event->objectid]);
+    }
 }
