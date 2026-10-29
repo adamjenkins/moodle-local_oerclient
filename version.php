@@ -31,7 +31,10 @@ $plugin->component = 'local_oerclient';
 // cache revision keys on this number too.
 // 2026102001 is the 1.0.8 release (the post-import checklist fix, readable
 // badges, the plugin icon). No schema, services or capability change.
-$plugin->version   = 2026102001;
+// 2026102900: local/oerclient:import gains RISK_XSS (capabilities are
+// re-read only on upgrade), and the upgrade step that splits
+// 'allowprivateexchange' off 'acceptinvalidcerts'. Release unchanged.
+$plugin->version   = 2026102900;
 // 2025041400 = the Moodle 5.0 branching version. The previous value
 // (2024100700) was Moodle 4.5 while its comment claimed 5.0 — and this
 // plugin hard-depends on core\navigation\navigation_node, which only exists

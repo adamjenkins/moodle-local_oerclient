@@ -34,8 +34,10 @@ $capabilities = [
             'manager' => CAP_ALLOW,
         ],
     ],
+    // Importing restores a backup written on another site into a course, so it
+    // carries the XSS risk of core's moodle/restore:restoreactivity.
     'local/oerclient:import' => [
-        'riskbitmask' => RISK_SPAM,
+        'riskbitmask' => RISK_SPAM | RISK_XSS,
         'captype' => 'write',
         'contextlevel' => CONTEXT_COURSE,
         'archetypes' => [
