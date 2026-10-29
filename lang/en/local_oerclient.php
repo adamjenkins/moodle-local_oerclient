@@ -48,6 +48,7 @@ $string['error_requestfailed'] = 'The request to the Exchange failed.';
 $string['error_resourcegone'] = 'This resource is no longer available on the Exchange. It may have been hidden or deleted by its author.';
 $string['error_restoreprecheckfailed'] = 'The restore precheck failed for this backup.';
 $string['error_sharecapabilitylost'] = 'You no longer have permission to share this course or activity.';
+$string['error_shareinflight'] = 'This share is still being processed. Wait until it has finished before updating the shared copy.';
 $string['error_sourcegone'] = 'The course this was shared from no longer exists on this site, so the shared copy can\'t be updated from here. The published resource on the Exchange is unaffected.';
 $string['error_sourcegoneactivity'] = 'The activity this was shared from no longer exists on this site, so the shared copy can\'t be updated from here. The published resource on the Exchange is unaffected.';
 $string['error_statusunavailable'] = 'Could not read the current status from the Exchange: {$a}';

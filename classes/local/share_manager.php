@@ -58,4 +58,53 @@ class share_manager {
 
         return true;
     }
+
+    /**
+     * Re-runs the share pipeline for a share that has finished ("Update the
+     * shared copy"), and refuses one that is still in flight.
+     *
+     * Before this check a share that was pending, backing up or uploading
+     * could be reset to pending and queued again. Two tasks then backed up
+     * the course at the same time, and on a first share both saw no
+     * Exchange resource id yet, so both published a new catalogue entry
+     * (security audit OERC-03, 2026-10-28). The page only drew the button
+     * for a published share; the request itself was never checked.
+     *
+     * The status is moved to pending with a conditional UPDATE, so of two
+     * requests racing on the same row only the first changes it, and the
+     * task is queued with core's duplicate check as a second guard.
+     *
+     * @param \stdClass $share a row from local_oerclient_shares
+     * @return bool true if an update was queued, false if the share is still in flight
+     */
+    public static function queue_update(\stdClass $share): bool {
+        global $DB;
+
+        $finished = ['published', 'failed'];
+        $current = $DB->get_field('local_oerclient_shares', 'status', ['id' => $share->id]);
+        if (!in_array($current, $finished, true)) {
+            return false;
+        }
+
+        [$insql, $params] = $DB->get_in_or_equal($finished, SQL_PARAMS_NAMED, 'st');
+        $now = time();
+        $DB->execute(
+            "UPDATE {local_oerclient_shares}
+                SET status = :pending, errormessage = NULL, timemodified = :now
+              WHERE id = :id AND status $insql",
+            $params + ['pending' => 'pending', 'now' => $now, 'id' => $share->id]
+        );
+        // Another request may have won the race between the read above and
+        // this update; if the row was not ours to move, do not queue.
+        $after = $DB->get_record('local_oerclient_shares', ['id' => $share->id], 'status, timemodified');
+        if (!$after || $after->status !== 'pending' || (int) $after->timemodified !== $now) {
+            return false;
+        }
+
+        $task = new \local_oerclient\task\share_upload_task();
+        $task->set_custom_data(['shareid' => (int) $share->id]);
+        \core\task\manager::queue_adhoc_task($task, true);
+
+        return true;
+    }
 }

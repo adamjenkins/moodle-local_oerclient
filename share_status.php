@@ -43,7 +43,8 @@ $PAGE->set_heading(get_string('sharestatustitle', 'local_oerclient'));
 // share_upload_task already finds the prior published share and passes its
 // resourceid to publish_resource, so the Exchange adds this as a new version
 // of the existing catalogue entry (and then supersedes the old one) rather
-// than creating a duplicate.
+// than creating a duplicate. Only a finished share can be re-run: see
+// share_manager::queue_update() for why one in flight must not be.
 if (optional_param('update', 0, PARAM_INT) && confirm_sesskey()) {
     require_capability('local/oerclient:share', context_course::instance($share->courseid));
 
@@ -56,16 +57,14 @@ if (optional_param('update', 0, PARAM_INT) && confirm_sesskey()) {
         );
     }
 
-    $DB->update_record('local_oerclient_shares', (object) [
-        'id' => $share->id,
-        'status' => 'pending',
-        'errormessage' => null,
-        'timemodified' => time(),
-    ]);
-
-    $task = new \local_oerclient\task\share_upload_task();
-    $task->set_custom_data(['shareid' => $share->id]);
-    \core\task\manager::queue_adhoc_task($task);
+    if (!\local_oerclient\local\share_manager::queue_update($share)) {
+        redirect(
+            new moodle_url('/local/oerclient/share_status.php', ['id' => $id]),
+            get_string('error_shareinflight', 'local_oerclient'),
+            null,
+            \core\output\notification::NOTIFY_WARNING
+        );
+    }
 
     redirect(
         new moodle_url('/local/oerclient/share_status.php', ['id' => $id]),
