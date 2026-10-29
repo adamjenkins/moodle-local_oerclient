@@ -266,6 +266,158 @@ final class import_manager_test extends \advanced_testcase {
     }
 
     /**
+     * Builds a source course holding a page and a label whose HTML carries
+     * script, the way a hostile resource on the Exchange could, and backs it
+     * up.
+     *
+     * The data generator saves intro and content as given (no editor form
+     * runs), which is exactly the state a restored backup arrives in; the
+     * assertions at the end check that the script really is in the source,
+     * so a test built on it cannot pass because there was nothing to clean.
+     *
+     * @return string path to the .mbz
+     */
+    protected function make_hostile_backup(): string {
+        global $DB;
+
+        $source = $this->getDataGenerator()->create_course(['visible' => 1, 'summary' => '']);
+        $page = $this->getDataGenerator()->create_module('page', [
+            'course' => $source->id,
+            'name' => 'Hostile page',
+            'intro' => '<p>Page intro</p><script>alert("intro")</script>',
+            'introformat' => FORMAT_HTML,
+            'content' => '<p onclick="alert(\'content\')">Page body</p><script>alert("content")</script>',
+            'contentformat' => FORMAT_HTML,
+            'visible' => 1,
+        ]);
+        $label = $this->getDataGenerator()->create_module('label', [
+            'course' => $source->id,
+            'intro' => '<p>Label text</p><img src="x" onerror="alert(\'label\')">',
+            'introformat' => FORMAT_HTML,
+            'visible' => 1,
+        ]);
+
+        $this->assertStringContainsString('<script>', $DB->get_field('page', 'intro', ['id' => $page->id]));
+        $this->assertStringContainsString('onclick=', $DB->get_field('page', 'content', ['id' => $page->id]));
+        $this->assertStringContainsString('onerror=', $DB->get_field('label', 'intro', ['id' => $label->id]));
+
+        return $this->make_backup($source, get_admin()->id);
+    }
+
+    /**
+     * Asserts that the page and label restored into a course carry no
+     * script, and that their ordinary text survived the cleaning.
+     *
+     * @param int $courseid course the backup was restored into
+     */
+    protected function assert_restored_html_is_clean(int $courseid): void {
+        global $DB;
+
+        $page = $DB->get_record('page', ['course' => $courseid, 'name' => 'Hostile page'], '*', MUST_EXIST);
+        $this->assertStringNotContainsString('<script', $page->intro);
+        $this->assertStringContainsString('Page intro', $page->intro);
+        $this->assertStringNotContainsString('<script', $page->content);
+        $this->assertStringNotContainsString('onclick', $page->content);
+        $this->assertStringContainsString('Page body', $page->content);
+
+        $labels = $DB->get_records('label', ['course' => $courseid]);
+        $this->assertCount(1, $labels);
+        $label = reset($labels);
+        $this->assertStringNotContainsString('onerror', $label->intro);
+        $this->assertStringContainsString('Label text', $label->intro);
+
+        // The course page shows a label's text from the modinfo cache, so the
+        // cleaned text has to have reached it as well.
+        $modinfo = get_fast_modinfo($courseid);
+        foreach ($modinfo->get_instances_of('label') as $cm) {
+            $this->assertStringNotContainsString('onerror', $cm->get_formatted_content());
+        }
+    }
+
+    /**
+     * An activity imported into a course the teacher already runs must not
+     * reach students before anyone has looked at it, and its HTML must not
+     * bring script with it (security audit OERC-01, 2026-10-28). What was
+     * already in the course is left exactly as it was.
+     */
+    public function test_an_activity_import_lands_hidden_with_its_html_cleaned(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $tmppath = $this->make_hostile_backup();
+
+        $target = $this->getDataGenerator()->create_course(['visible' => 1, 'summary' => '']);
+        $existing = $this->getDataGenerator()->create_module('page', [
+            'course' => $target->id,
+            'name' => 'Already here',
+            'intro' => '<p>Mine</p>',
+            'visible' => 1,
+        ]);
+
+        $method = new \ReflectionMethod(import_manager::class, 'restore_into');
+        $method->setAccessible(true);
+        $newcmids = $method->invoke(null, $tmppath, (int) $target->id, 'activity', get_admin()->id, null);
+
+        $this->assertCount(2, $newcmids, 'the page and the label are the modules the import created');
+        $this->assertNotContains((int) $existing->cmid, $newcmids);
+        foreach ($newcmids as $cmid) {
+            $this->assertSame(
+                '0',
+                (string) $DB->get_field('course_modules', 'visible', ['id' => $cmid]),
+                'an imported activity must start hidden from students'
+            );
+        }
+        $this->assertSame(
+            '1',
+            (string) $DB->get_field('course_modules', 'visible', ['id' => $existing->cmid]),
+            'an activity that was already in the course must keep its visibility'
+        );
+        $this->assertSame('<p>Mine</p>', $DB->get_field('page', 'intro', ['id' => $existing->id]));
+
+        $this->assert_restored_html_is_clean((int) $target->id);
+    }
+
+    /**
+     * A course-type import is hidden as a course; its activities keep their
+     * own visibility inside it, but their HTML is cleaned all the same.
+     */
+    public function test_a_course_import_cleans_the_restored_html(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $tmppath = $this->make_hostile_backup();
+        $created = $this->getDataGenerator()->create_course(['visible' => 0, 'summary' => '']);
+
+        $method = new \ReflectionMethod(import_manager::class, 'restore_into');
+        $method->setAccessible(true);
+        $newcmids = $method->invoke(null, $tmppath, (int) $created->id, 'course', get_admin()->id, (int) $created->id);
+
+        $this->assertCount(2, $newcmids);
+        $this->assertSame('0', (string) $DB->get_field('course', 'visible', ['id' => $created->id]));
+        foreach ($newcmids as $cmid) {
+            $this->assertSame('1', (string) $DB->get_field('course_modules', 'visible', ['id' => $cmid]));
+        }
+
+        $this->assert_restored_html_is_clean((int) $created->id);
+    }
+
+    /**
+     * The checklist's visibility item matches what the import did: an
+     * activity is hidden on its own, a course as a whole.
+     */
+    public function test_the_checklist_names_what_the_import_hid(): void {
+        $activity = import_manager::localization_checklist(['type' => 'activity']);
+        $this->assertContains(get_string('checklist_visibility_activity', 'local_oerclient'), $activity);
+        $this->assertNotContains(get_string('checklist_visibility', 'local_oerclient'), $activity);
+
+        $course = import_manager::localization_checklist(['type' => 'course']);
+        $this->assertContains(get_string('checklist_visibility', 'local_oerclient'), $course);
+        $this->assertNotContains(get_string('checklist_visibility_activity', 'local_oerclient'), $course);
+    }
+
+    /**
      * The post-import checklist is built by the result page itself, and has
      * every item.
      *

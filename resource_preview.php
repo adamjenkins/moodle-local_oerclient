@@ -97,6 +97,7 @@ if ($resource['type'] !== 'data' && data_submitted() && confirm_sesskey() && opt
     // The result page builds the checklist itself (import_manager::localization_checklist()).
     redirect(new moodle_url('/local/oerclient/import_result.php', [
         'courseid' => $importresult['courseid'],
+        'type' => $importresult['type'],
     ]));
 }
 
@@ -260,6 +261,10 @@ if ($resource['type'] === 'data') {
     }
 } else {
     echo $OUTPUT->heading(get_string('importheading', 'local_oerclient'), 4);
+    // The preview above shows titles and structure only; the activity text
+    // itself was written on another site and is seen here for the first time
+    // after the import (security audit OERC-01).
+    echo $OUTPUT->notification(get_string('importunreviewed', 'local_oerclient'), 'warning', false);
     echo html_writer::start_tag('form', [
         'method' => 'post',
         'action' => new moodle_url('/local/oerclient/resource_preview.php', ['id' => $id]),

@@ -103,7 +103,11 @@ version to the same catalogue entry rather than creating a duplicate.
      content into it, and takes you to the localization checklist.
    - **Single activity**: choose which of your courses to import it into
      (only courses where you have import rights are listed), then it's
-     added to that course.
+     added to that course, hidden from students so you can review it first.
+
+   The content was written on another site, so the import also removes
+   scripts and other unsafe HTML from activity descriptions and page
+   content.
 4. Importing runs the restore synchronously — you'll see a normal Moodle
    "processing" wait, then land on the checklist page. Large or unusual
    backups can occasionally fail a Moodle restore precheck; if that
@@ -119,8 +123,9 @@ site-specific warnings:
   original course and likely need updating for your own term.
 - **Names and references**: check activity content for any names,
   institutions, or contact details that came with the original.
-- **Visibility**: imported *courses* are hidden by default specifically so
-  you can review them first — make the course visible when you're ready.
+- **Visibility**: an imported course, or an activity imported into one of
+  your courses, is hidden from students specifically so you can review it
+  first — make it visible when you're ready.
 - **Grading**: check that grade items and scales match your own gradebook
   setup, especially if you use a different grading scheme than the original
   author.

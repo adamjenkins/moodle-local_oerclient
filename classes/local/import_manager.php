@@ -61,7 +61,9 @@ class import_manager {
      * @param int $userid importing user
      * @param int|null $targetcourseid required when the resource is an activity — the
      *                                 course to import the activity into
-     * @return array {courseid, checklist} — checklist is a list of localization hints
+     * @return array {courseid, type, cmids, checklist} — type is 'course'|'activity',
+     *               cmids the course modules the import created (hidden when type is
+     *               'activity'), checklist a list of localization hints
      */
     public static function import(array $resource, int $userid, ?int $targetcourseid = null): array {
         global $CFG, $DB;
@@ -108,7 +110,7 @@ class import_manager {
                 $createdcourseid = (int) $newcourse->id;
             }
 
-            self::restore_into($tmppath, (int) $courseid, $resource['type'], $userid, $createdcourseid);
+            $newcmids = self::restore_into($tmppath, (int) $courseid, $resource['type'], $userid, $createdcourseid);
 
             $DB->insert_record('local_oerclient_imports', (object) [
                 'userid' => $userid,
@@ -120,6 +122,8 @@ class import_manager {
 
             return [
                 'courseid' => $courseid,
+                'type' => $resource['type'] === 'activity' ? 'activity' : 'course',
+                'cmids' => $newcmids,
                 'checklist' => self::localization_checklist($resource),
             ];
         } finally {
@@ -137,11 +141,19 @@ class import_manager {
      * import can't leave an orphan course behind. The temp .mbz is always
      * removed.
      *
+     * The backup was authored on another site and nobody here has seen its
+     * HTML (the preview shows titles and structure only), so after the
+     * restore the activity HTML that core prints without cleaning is run
+     * through the HTML purifier (see clean_restored_content()), and
+     * activities added to an existing course start hidden, as a new course
+     * already does (security audit OERC-01, 2026-10-28).
+     *
      * @param string $tmppath local path to the downloaded .mbz
      * @param int $courseid course to restore into
      * @param string $type 'course'|'activity'
      * @param int $userid restoring user
      * @param int|null $createdcourseid course this import created (to roll back on failure), or null
+     * @return int[] ids of the course modules the restore created
      * @throws \moodle_exception|\Throwable if the restore fails
      */
     protected static function restore_into(
@@ -150,8 +162,8 @@ class import_manager {
         string $type,
         int $userid,
         ?int $createdcourseid
-    ): void {
-        global $CFG;
+    ): array {
+        global $CFG, $DB;
 
         require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
         // Both delete_course() on the failure path and course_change_visibility()
@@ -183,8 +195,34 @@ class import_manager {
                 throw new \moodle_exception('error_restoreprecheckfailed', 'local_oerclient');
             }
 
+            // What was in the course before, so the modules this restore adds
+            // can be told apart afterwards. A diff of the course's own rows
+            // rather than the restore's id mappings: those live in a temp
+            // table that destroy() drops, and the diff cannot miss a module.
+            $existingcmids = $DB->get_fieldset_select('course_modules', 'id', 'course = ?', [$courseid]);
+
             $rc->execute_plan();
             $rc->destroy();
+
+            $newcmids = array_values(array_diff(
+                array_map('intval', $DB->get_fieldset_select('course_modules', 'id', 'course = ?', [$courseid])),
+                array_map('intval', $existingcmids)
+            ));
+
+            self::clean_restored_content($newcmids);
+
+            // A course this import created is hidden as a whole below. An
+            // activity added to a course the teacher already runs would
+            // otherwise keep the backup's own visible flag and reach students
+            // the moment the restore finished, before anyone had looked at it.
+            if (!$createdcourseid) {
+                foreach ($newcmids as $cmid) {
+                    set_coursemodule_visible($cmid, 0);
+                }
+            }
+            // Label text (and any intro shown on the course page) is cached
+            // in modinfo, so the cleaned text has to replace the cached copy.
+            rebuild_course_cache($courseid, true);
 
             // A course restore writes the backup's own course settings over the
             // ones the new course was created with — visibility included. So
@@ -208,6 +246,77 @@ class import_manager {
         }
 
         @unlink($tmppath);
+
+        return $newcmids;
+    }
+
+    /**
+     * Runs the restored HTML of the given course modules through the HTML
+     * purifier: every module's intro, and a page's content.
+     *
+     * Core prints module intros with 'noclean' => true (format_module_intro()
+     * in lib/weblib.php), and mod_page prints its content the same way,
+     * because the editing form already cleaned them when a local teacher
+     * saved them. A restored backup never passes through that form. Cleaning
+     * here gives imported text the treatment text typed on this site gets:
+     * clean_text() with the field's own format.
+     *
+     * @param int[] $cmids course modules created by an import
+     */
+    protected static function clean_restored_content(array $cmids): void {
+        global $DB;
+
+        if (!$cmids) {
+            return;
+        }
+
+        [$insql, $params] = $DB->get_in_or_equal($cmids);
+        $cms = $DB->get_records_sql(
+            "SELECT cm.id, cm.instance, m.name AS modname
+               FROM {course_modules} cm
+               JOIN {modules} m ON m.id = cm.module
+              WHERE cm.id $insql",
+            $params
+        );
+
+        // Extra text field => its format field, per module table, on top of
+        // every module's intro/introformat.
+        $extrafields = ['page' => ['content' => 'contentformat']];
+        $columnscache = [];
+
+        foreach ($cms as $cm) {
+            $table = clean_param($cm->modname, PARAM_PLUGIN);
+            if ($table === '' || !$DB->get_manager()->table_exists($table)) {
+                continue;
+            }
+            if (!isset($columnscache[$table])) {
+                $columnscache[$table] = $DB->get_columns($table);
+            }
+            $columns = $columnscache[$table];
+
+            $fields = ['intro' => 'introformat'] + ($extrafields[$table] ?? []);
+            $fields = array_filter($fields, fn($field) => isset($columns[$field]), ARRAY_FILTER_USE_KEY);
+            if (!$fields) {
+                continue;
+            }
+
+            $record = $DB->get_record($table, ['id' => $cm->instance]);
+            if (!$record) {
+                continue;
+            }
+            $update = ['id' => $record->id];
+            foreach ($fields as $field => $formatfield) {
+                // A table with no format column holds HTML.
+                $format = isset($columns[$formatfield]) ? (int) $record->$formatfield : FORMAT_HTML;
+                $cleaned = clean_text((string) $record->$field, $format);
+                if ($cleaned !== (string) $record->$field) {
+                    $update[$field] = $cleaned;
+                }
+            }
+            if (count($update) > 1) {
+                $DB->update_record($table, (object) $update);
+            }
+        }
     }
 
     /**
@@ -277,17 +386,20 @@ class import_manager {
      * Public because import_result.php builds it itself. It used to arrive
      * there as a base64 URL parameter read with PARAM_BASE64, which accepts
      * only PEM-style data in 64-character lines: the single long line this
-     * produced was cleaned to '', so the checklist was never shown. It does
-     * not depend on the resource, so there is nothing to pass.
+     * produced was cleaned to '', so the checklist was never shown. It
+     * depends only on the resource's type, which the result page is given:
+     * the type decides the visibility item, because a course is hidden as a
+     * whole and an activity added to an existing course is hidden on its own.
      *
-     * @param array $resource the imported resource (not used; kept for callers)
+     * @param array $resource the imported resource; only 'type' is read (default 'course')
      * @return string[]
      */
     public static function localization_checklist(array $resource = []): array {
+        $isactivity = ($resource['type'] ?? 'course') === 'activity';
         return [
             get_string('checklist_dates', 'local_oerclient'),
             get_string('checklist_names', 'local_oerclient'),
-            get_string('checklist_visibility', 'local_oerclient'),
+            get_string($isactivity ? 'checklist_visibility_activity' : 'checklist_visibility', 'local_oerclient'),
             get_string('checklist_grading', 'local_oerclient'),
         ];
     }
